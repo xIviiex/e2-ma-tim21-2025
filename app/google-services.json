@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "178486506205",
+    "project_id": "isidorap-ivaz",
+    "storage_bucket": "isidorap-ivaz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178486506205:android:daff12da0c8baee3dc2134",
+        "android_client_info": {
+          "package_name": "com.team21.questify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDm7seQIi_eJ-3qoYbj0GM9-40GIyBPk4M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
