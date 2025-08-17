@@ -12,7 +12,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
-            android:name=".MainActivity"
+            android:name=".presentation.activity.LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.activity.RegistrationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.activity.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
