@@ -34,20 +34,18 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = new SharedPrefs(this);
 
         if (sharedPreferences.getUserUid() == null) {
-            startActivity(new Intent(this, RegistrationActivity.class));
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
         }
 
-        Button btnLogout = findViewById(R.id.btn_logout);
+        Button btnViewProfile = findViewById(R.id.btn_view_profile);
         TextView welcomeTextView = findViewById(R.id.tv_welcome_title);
 
         welcomeTextView.setText("Welcome to Questify, " + sharedPreferences.getUsername() + "!");
 
-        btnLogout.setOnClickListener(v -> {
-            userService.logoutUser();
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
+        btnViewProfile.setOnClickListener(v -> {
+            startActivity(new Intent(this, ProfileActivity.class));
         });
     }
 }

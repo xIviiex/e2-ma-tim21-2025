@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Questify</string>
+    <string name="profile_avatar">Profile avatar</string>
+    <string name="old_password">Old Password</string>
+    <string name="new_password">New Password</string>
+    <string name="confirm_new_password">Confirm New Password</string>
+    <string name="my_profile">My Profile</string>
+    <string name="badges_section_title">Badges</string>
+    <string name="equipment_section_title">Equipment</string>
+    <string name="no_badges_message">You have no badges yet. Complete quests to earn them!</string>
+    <string name="no_equipment_message">You have no equipment yet.</string>
+    <string name="logout">Logout</string>
+    <string name="change_password_title">Change Password</string>
+    <string name="show_qr_code">Show QR Code</string>
 </resources>
