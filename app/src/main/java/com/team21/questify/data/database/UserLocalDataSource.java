@@ -8,6 +8,9 @@ import android.database.sqlite.SQLiteDatabase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.team21.questify.application.model.User;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class UserLocalDataSource {
     private final DatabaseHelper helper;
 
@@ -71,4 +74,31 @@ public class UserLocalDataSource {
         db.close();
     }
 
+    public User getUserById(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor c = db.query(DatabaseHelper.T_USERS, null,
+                "id" + "=?", new String[]{userId},
+                null, null, null);
+        User user = null;
+        if (c != null && c.moveToFirst()) {
+            user = cursorToUser(c);
+            c.close();
+        }
+        db.close();
+        return user;
+    }
+
+    public List<User> getAllUsers() {
+        List<User> userList = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor c = db.query(DatabaseHelper.T_USERS, null, null, null, null, null, null);
+        if (c != null && c.moveToFirst()) {
+            do {
+                userList.add(cursorToUser(c));
+            } while (c.moveToNext());
+            c.close();
+        }
+        db.close();
+        return userList;
+    }
 }

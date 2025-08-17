@@ -7,14 +7,19 @@ import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.User;
 import com.team21.questify.data.database.UserLocalDataSource;
 import com.team21.questify.data.firebase.UserRemoteDataSource;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserRepository {
     private final UserLocalDataSource localDataSource;
@@ -87,4 +92,49 @@ public class UserRepository {
             listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("No user is currently signed in to delete.")));
         }
     }
+
+    public void getUserById(String userId, OnCompleteListener<User> onCompleteListener) {
+        User localUser = localDataSource.getUserById(userId);
+        if (localUser != null) {
+            onCompleteListener.onComplete(Tasks.forResult(localUser));
+        }
+
+        remoteDataSource.fetchUserFromFirestore(userId, task -> {
+            if (task.isSuccessful() && task.getResult().exists()) {
+                User remoteUser = task.getResult().toObject(User.class);
+                if (remoteUser != null) {
+                    localDataSource.insertUser(remoteUser);
+                    onCompleteListener.onComplete(Tasks.forResult(remoteUser));
+                }
+            } else {
+                if (localUser == null) {
+                    onCompleteListener.onComplete(Tasks.forException(task.getException()));
+                }
+            }
+        });
+    }
+
+    public void getAllUsers(OnCompleteListener<List<User>> onCompleteListener) {
+        List<User> localUsers = localDataSource.getAllUsers();
+        if (!localUsers.isEmpty()) {
+            onCompleteListener.onComplete(Tasks.forResult(localUsers));
+        }
+
+        remoteDataSource.fetchAllUsers(task -> {
+            if (task.isSuccessful()) {
+                List<User> remoteUsers = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    User user = document.toObject(User.class);
+                    remoteUsers.add(user);
+                    localDataSource.insertUser(user);
+                }
+                onCompleteListener.onComplete(Tasks.forResult(remoteUsers));
+            } else {
+                if (localUsers.isEmpty()) {
+                    onCompleteListener.onComplete(Tasks.forException(task.getException()));
+                }
+            }
+        });
+    }
+
 }

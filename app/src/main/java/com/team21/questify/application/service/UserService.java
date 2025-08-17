@@ -7,13 +7,16 @@ import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.team21.questify.application.model.User;
 import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
 
+import java.util.List;
 import java.util.Objects;
 
 public class UserService {
@@ -152,5 +155,48 @@ public class UserService {
             return "Choose avatar.";
         }
         return null;
+    }
+
+    public void changePassword(String oldPassword, String newPassword, String confirmNewPassword, OnCompleteListener<Void> listener) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user == null) {
+            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("No user is currently logged in.")));
+            return;
+        }
+
+        if (newPassword == null || newPassword.length() < 8) {
+            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("New password must be at least 8 characters long.")));
+            return;
+        }
+
+        if (!newPassword.equals(confirmNewPassword)) {
+            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("New passwords do not match.")));
+            return;
+        }
+
+        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), oldPassword);
+
+        user.reauthenticate(credential).addOnCompleteListener(reauthTask -> {
+            if (reauthTask.isSuccessful()) {
+                user.updatePassword(newPassword).addOnCompleteListener(updateTask -> {
+                    if (updateTask.isSuccessful()) {
+                        listener.onComplete(updateTask);
+                    } else {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to change password. Please try again.")));
+                    }
+                });
+            } else {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Incorrect old password.")));
+            }
+        });
+    }
+
+    public void fetchUserProfile(String userId, OnCompleteListener<User> listener) {
+        userRepository.getUserById(userId, listener);
+    }
+
+    public void fetchAllUsers(OnCompleteListener<List<User>> listener) {
+        userRepository.getAllUsers(listener);
     }
 }
