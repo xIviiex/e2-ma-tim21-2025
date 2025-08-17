@@ -16,6 +16,7 @@ import com.team21.questify.application.model.User;
 import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
 
+import java.util.List;
 import java.util.Objects;
 
 public class UserService {
@@ -189,5 +190,13 @@ public class UserService {
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Incorrect old password.")));
             }
         });
+    }
+
+    public void fetchUserProfile(String userId, OnCompleteListener<User> listener) {
+        userRepository.getUserById(userId, listener);
+    }
+
+    public void fetchAllUsers(OnCompleteListener<List<User>> listener) {
+        userRepository.getAllUsers(listener);
     }
 }

@@ -12,4 +12,5 @@
     <string name="logout">Logout</string>
     <string name="change_password_title">Change Password</string>
     <string name="show_qr_code">Show QR Code</string>
+    <string name="user_profile">User Profile</string>
 </resources>

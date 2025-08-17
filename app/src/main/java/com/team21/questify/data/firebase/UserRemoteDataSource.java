@@ -61,4 +61,8 @@ public class UserRemoteDataSource {
     public void deleteUserFromFirestore(String userId, OnCompleteListener<Void> listener) {
         db.collection("users").document(userId).delete().addOnCompleteListener(listener);
     }
+
+    public void fetchAllUsers(OnCompleteListener<QuerySnapshot> listener) {
+        db.collection("users").get().addOnCompleteListener(listener);
+    }
 }

@@ -22,33 +22,46 @@ import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.team21.questify.R;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.service.UserService;
-import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
+
+import java.util.Objects;
 
 public class ProfileActivity extends AppCompatActivity {
 
     private ImageView ivAvatar, ivQrCode;
     private TextView tvUsername, tvLevel, tvTitle, tvPowerPoints, tvXp, tvCoins, tvBadgesStatus, tvEquipmentStatus;
     private Button btnChangePassword;
+    private boolean isMyProfile;
 
     private UserService userService;
-    private UserRepository userRepository;
+    private SharedPrefs sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(R.string.my_profile);
-        }
+        initViews();
+        setupToolbar();
 
         userService = new UserService(this);
-        userRepository = new UserRepository(this);
+        sharedPreferences = new SharedPrefs(this);
 
+        String currentUserId = sharedPreferences.getUserUid();
+        String profileUserId = getIntent().getStringExtra("user_id");
+        if (profileUserId == null || profileUserId.isEmpty()) {
+            profileUserId = currentUserId;
+        }
+
+        isMyProfile = Objects.equals(currentUserId, profileUserId);
+
+        setupProfileVisibility();
+        loadUserProfile(profileUserId);
+    }
+
+    private void initViews() {
         ivAvatar = findViewById(R.id.iv_profile_avatar);
+        ivQrCode = findViewById(R.id.iv_qr_code_icon);
         tvUsername = findViewById(R.id.tv_profile_username);
         tvLevel = findViewById(R.id.tv_profile_level);
         tvTitle = findViewById(R.id.tv_profile_title);
@@ -58,11 +71,31 @@ public class ProfileActivity extends AppCompatActivity {
         tvBadgesStatus = findViewById(R.id.tv_badges_status);
         tvEquipmentStatus = findViewById(R.id.tv_equipment_status);
         btnChangePassword = findViewById(R.id.btn_change_password);
-        ivQrCode = findViewById(R.id.iv_qr_code_icon);
 
-        loadUserProfile();
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         ivQrCode.setOnClickListener(v -> showQrCodeDialog());
+    }
+
+    private void setupToolbar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+    }
+
+    private void setupProfileVisibility() {
+        int myProfileVisibility = isMyProfile ? View.VISIBLE : View.GONE;
+
+        tvPowerPoints.setVisibility(myProfileVisibility);
+        tvCoins.setVisibility(myProfileVisibility);
+        btnChangePassword.setVisibility(myProfileVisibility);
+        ivQrCode.setVisibility(myProfileVisibility);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(isMyProfile ? R.string.my_profile : R.string.user_profile);
+        }
     }
 
     @Override
@@ -72,7 +105,20 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem logoutItem = menu.findItem(R.id.action_logout);
+        if (logoutItem != null) {
+            logoutItem.setVisible(isMyProfile);
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
         if (item.getItemId() == R.id.action_logout) {
             userService.logoutUser();
             Intent intent = new Intent(this, LoginActivity.class);
@@ -84,43 +130,30 @@ public class ProfileActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void loadUserProfile() {
-        String userId = new SharedPrefs(this).getUserUid();
-        if (userId == null) {
-            Toast.makeText(this, "User not logged in.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
+    private void loadUserProfile(String userId) {
+        userService.fetchUserProfile(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User user = task.getResult();
+                tvUsername.setText(user.getUsername());
+                tvLevel.setText("Level: " + user.getLevel());
+                tvTitle.setText("Title: " + user.getTitle());
+                tvPowerPoints.setText("PP: " + user.getPowerPoints());
+                tvXp.setText("XP: " + user.getXp());
+                tvCoins.setText("Coins: " + user.getCoins());
 
-        userRepository.fetchUserFromFirebase(userId, task -> {
-            if (task.isSuccessful() && task.getResult().exists()) {
-                User user = task.getResult().toObject(User.class);
-                if (user != null) {
-                    tvUsername.setText(user.getUsername());
-                    tvLevel.setText("Level: " + user.getLevel());
-                    tvTitle.setText("Title: " + user.getTitle());
-                    tvPowerPoints.setText("PP: " + user.getPowerPoints());
-                    tvXp.setText("XP: " + user.getXp());
-                    tvCoins.setText("Coins: " + user.getCoins());
+                tvBadgesStatus.setText(user.getBadgesCount() > 0 ?
+                        "You have " + user.getBadgesCount() + " badges." :
+                        getString(R.string.no_badges_message));
 
-                    if (user.getBadgesCount() > 0) {
-                        tvBadgesStatus.setText("You have " + user.getBadgesCount() + " badges.");
-                    } else {
-                        tvBadgesStatus.setText(R.string.no_badges_message);
-                    }
+                tvEquipmentStatus.setText((user.getEquipment() != null && !user.getEquipment().isEmpty()) ?
+                        "You have " + user.getEquipmentCount() + " pieces of equipment." :
+                        getString(R.string.no_equipment_message));
 
-                    if (user.getEquipment() != null && !user.getEquipment().isEmpty()) {
-                        tvEquipmentStatus.setText("You have " + user.getEquipmentCount() + " pieces of equipment.");
-                    } else {
-                        tvEquipmentStatus.setText(R.string.no_equipment_message);
-                    }
-
-                    int resId = getResources().getIdentifier(user.getAvatarName(), "drawable", getPackageName());
-                    if (resId != 0) {
-                        ivAvatar.setImageResource(resId);
-                    } else {
-                        ivAvatar.setImageResource(R.drawable.default_avatar);
-                    }
+                int resId = getResources().getIdentifier(user.getAvatarName(), "drawable", getPackageName());
+                if (resId != 0) {
+                    ivAvatar.setImageResource(resId);
+                } else {
+                    ivAvatar.setImageResource(R.drawable.default_avatar);
                 }
             } else {
                 Toast.makeText(this, "Failed to load user profile.", Toast.LENGTH_SHORT).show();
@@ -143,9 +176,9 @@ public class ProfileActivity extends AppCompatActivity {
         dialog.show();
 
         btnChange.setOnClickListener(v -> {
-            String oldPassword = tilOldPassword.getEditText().getText().toString().trim();
-            String newPassword = tilNewPassword.getEditText().getText().toString().trim();
-            String confirmNewPassword = tilConfirmNewPassword.getEditText().getText().toString().trim();
+            String oldPassword = Objects.requireNonNull(tilOldPassword.getEditText()).getText().toString().trim();
+            String newPassword = Objects.requireNonNull(tilNewPassword.getEditText()).getText().toString().trim();
+            String confirmNewPassword = Objects.requireNonNull(tilConfirmNewPassword.getEditText()).getText().toString().trim();
 
             userService.changePassword(oldPassword, newPassword, confirmNewPassword, task -> {
                 if (task.isSuccessful()) {
@@ -169,7 +202,7 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
     private void showQrCodeDialog() {
-        String userId = new SharedPrefs(this).getUserUid();
+        String userId = sharedPreferences.getUserUid();
         if (userId == null) {
             Toast.makeText(this, "User ID not available.", Toast.LENGTH_SHORT).show();
             return;
@@ -181,20 +214,18 @@ public class ProfileActivity extends AppCompatActivity {
             View dialogView = inflater.inflate(R.layout.dialog_qr_code, null);
             builder.setView(dialogView);
 
-            ImageView ivQrCode = dialogView.findViewById(R.id.iv_qr_code_display);
+            ImageView ivQrCodeDisplay = dialogView.findViewById(R.id.iv_qr_code_display);
 
             BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
             Bitmap bitmap = barcodeEncoder.encodeBitmap(userId, BarcodeFormat.QR_CODE, 400, 400);
 
-            ivQrCode.setImageBitmap(bitmap);
+            ivQrCodeDisplay.setImageBitmap(bitmap);
 
             AlertDialog dialog = builder.create();
             dialog.show();
-
         } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(this, "Failed to generate QR code.", Toast.LENGTH_SHORT).show();
         }
     }
-
 }
