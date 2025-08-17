@@ -12,16 +12,25 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.team21.questify.R;
+import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
 
 public class MainActivity extends AppCompatActivity {
-
+    private UserService userService;
     private SharedPrefs sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
+        userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
 
         if (sharedPreferences.getUserUid() == null) {
@@ -32,20 +41,13 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnLogout = findViewById(R.id.btn_logout);
         TextView welcomeTextView = findViewById(R.id.tv_welcome_title);
-        welcomeTextView.setText("Welcome to Questify, " + sharedPreferences.getUserEmail() + "!");
+
+        welcomeTextView.setText("Welcome to Questify, " + sharedPreferences.getUsername() + "!");
 
         btnLogout.setOnClickListener(v -> {
-            sharedPreferences.clearSession();
+            userService.logoutUser();
             startActivity(new Intent(this, LoginActivity.class));
             finish();
-        });
-
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
         });
     }
 }

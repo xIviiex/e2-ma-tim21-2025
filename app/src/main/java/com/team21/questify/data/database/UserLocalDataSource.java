@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.team21.questify.application.model.User;
 
 public class UserLocalDataSource {
@@ -63,4 +64,11 @@ public class UserLocalDataSource {
         u.setLevel(c.getInt(c.getColumnIndexOrThrow("level")));
         return u;
     }
+
+    public void deleteUser(String userId, OnCompleteListener<Void> onCompleteListener) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.delete(DatabaseHelper.T_USERS, "id" + " = ?", new String[]{userId});
+        db.close();
+    }
+
 }
