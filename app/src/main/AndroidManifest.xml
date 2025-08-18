@@ -12,6 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
+            android:name=".presentation.activity.CreateTaskCategoryActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".presentation.activity.ProfileActivity"
             android:exported="false" />
         <activity
