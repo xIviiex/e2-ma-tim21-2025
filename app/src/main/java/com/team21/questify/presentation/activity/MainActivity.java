@@ -64,6 +64,13 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+
+        Button btnCreateTask = findViewById(R.id.btn_create_task);
+        btnCreateTask.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreateTaskCategoryActivity.class);
+            startActivity(intent);
+        });
+
         rvUsers = findViewById(R.id.rv_users);
         rvUsers.setLayoutManager(new LinearLayoutManager(this));
     }
