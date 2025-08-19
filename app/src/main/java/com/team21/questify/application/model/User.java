@@ -1,23 +1,17 @@
 package com.team21.questify.application.model;
 
-
-import java.util.ArrayList;
-import java.util.List;
-
 public class User {
     private String userId;
     private String username;
     private String email;
     private String avatarName;
-    private int level = 1;
+    private int level = 0;
     private int xp = 0;
     private boolean isActivated;
     private Long createdAt;
     private String title = "Adventurer";
     private int powerPoints = 0;
     private int coins = 0;
-    private List<String> badges = new ArrayList<>();
-    private List<String> equipment = new ArrayList<>();
 
     public User() {}
 
@@ -33,7 +27,7 @@ public class User {
     }
 
     public User(String userId, String username, String email, String avatarName, int level, int xp, boolean isActivated,
-                Long createdAt, String title, int powerPoints, int coins, List<String> badges, List<String> equipment) {
+                Long createdAt, String title, int powerPoints, int coins) {
         this.userId = userId;
         this.username = username;
         this.email = email;
@@ -45,8 +39,6 @@ public class User {
         this.title = title;
         this.powerPoints = powerPoints;
         this.coins = coins;
-        this.badges = badges;
-        this.equipment = equipment;
     }
 
     public String getUserId() { return userId; }
@@ -71,10 +63,4 @@ public class User {
     public void setPowerPoints(int powerPoints) { this.powerPoints = powerPoints; }
     public int getCoins() { return coins; }
     public void setCoins(int coins) { this.coins = coins; }
-    public List<String> getBadges() { return badges; }
-    public void setBadges(List<String> badges) { this.badges = badges; }
-    public List<String> getEquipment() { return equipment; }
-    public void setEquipment(List<String> equipment) { this.equipment = equipment; }
-    public Integer getEquipmentCount() { return this.equipment.size(); }
-    public Integer getBadgesCount() { return this.badges.size(); }
 }

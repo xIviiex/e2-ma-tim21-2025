@@ -3,10 +3,7 @@ package com.team21.questify.data.repository;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -135,6 +132,11 @@ public class UserRepository {
                 }
             }
         });
+    }
+
+    public void updateUser(User user) {
+        localDataSource.updateUser(user);
+        remoteDataSource.saveUserToFirestore(user);
     }
 
 }
