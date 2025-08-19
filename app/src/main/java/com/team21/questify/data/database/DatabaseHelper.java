@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 1;
+    public static final int DB_VERSION = 2;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
 
@@ -24,7 +24,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "is_activated INTEGER NOT NULL DEFAULT 0, " +
                 "created_at INTEGER NOT NULL," +
                 "xp INTEGER DEFAULT 0," +
-                "level INTEGER DEFAULT 1" +
+                "level INTEGER DEFAULT 0," +
+                "power_points INTEGER DEFAULT 0," +
+                "title TEXT DEFAULT 'Adventurer'," +
+                "coins INTEGER DEFAULT 0" +
                 ")");
 
         db.execSQL("CREATE TABLE " + T_TASK_CATEGORIES + " (" +
@@ -38,9 +41,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + T_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + T_TASK_CATEGORIES);
-        onCreate(db);
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN power_points INTEGER DEFAULT 0");
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN title TEXT DEFAULT 'Adventurer'");
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN coins INTEGER DEFAULT 0");
+        }
     }
 
 }

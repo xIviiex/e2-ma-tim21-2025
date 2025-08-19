@@ -13,4 +13,5 @@
     <string name="change_password_title">Change Password</string>
     <string name="show_qr_code">Show QR Code</string>
     <string name="user_profile">User Profile</string>
+    <string name="xp_progress_label">XP progress bar\n</string>
 </resources>

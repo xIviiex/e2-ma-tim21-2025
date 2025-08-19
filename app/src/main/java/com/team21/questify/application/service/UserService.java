@@ -3,10 +3,8 @@ package com.team21.questify.application.service;
 import android.content.Context;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
+import com.team21.questify.utils.LevelCalculator;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
@@ -17,7 +15,6 @@ import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
 
 import java.util.List;
-import java.util.Objects;
 
 public class UserService {
     private final UserRepository userRepository;
@@ -199,4 +196,35 @@ public class UserService {
     public void fetchAllUsers(OnCompleteListener<List<User>> listener) {
         userRepository.getAllUsers(listener);
     }
+
+    public void addXpAndCheckLevelUp(String userId, int xpToAdd) {
+        userRepository.getUserById(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User user = task.getResult();
+                int currentXp = user.getXp();
+                int newXp = currentXp + xpToAdd;
+
+                int currentLevel = user.getLevel();
+                int xpForNextLevel = LevelCalculator.getRequiredXpForNextLevel(currentLevel);
+
+                if (newXp >= xpForNextLevel) {
+                    user.setXp(newXp - xpForNextLevel);
+                    user.setLevel(currentLevel + 1);
+                    user.setTitle(LevelCalculator.getTitleForLevel(currentLevel + 1));
+                    user.setPowerPoints(user.getPowerPoints() + LevelCalculator.getPowerPointsForLevel(currentLevel + 1));
+
+                    Log.d("UserService", "User " + user.getUsername() + " leveled up to " + user.getLevel() + " level.");
+
+                    userRepository.updateUser(user);
+
+                } else {
+                    user.setXp(newXp);
+                    userRepository.updateUser(user);
+                }
+            } else {
+                Log.e("UserService", "Unsuccessful getting user for adding XP.");
+            }
+        });
+    }
+
 }

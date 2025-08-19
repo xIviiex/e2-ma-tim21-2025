@@ -10,6 +10,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,14 +24,16 @@ import com.team21.questify.R;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
+import com.team21.questify.utils.LevelCalculator;
 
 import java.util.Objects;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private ImageView ivAvatar, ivQrCode;
-    private TextView tvUsername, tvLevel, tvTitle, tvPowerPoints, tvXp, tvCoins, tvBadgesStatus, tvEquipmentStatus;
+    private ImageView ivAvatar, ivQrCode, ivAvatarBorder;
+    private TextView tvUsername, tvLevel, tvTitle, tvPowerPoints, tvXpDetails, tvCoins;
     private Button btnChangePassword;
+    private ProgressBar pbXpProgress;
     private boolean isMyProfile;
 
     private UserService userService;
@@ -62,15 +65,15 @@ public class ProfileActivity extends AppCompatActivity {
     private void initViews() {
         ivAvatar = findViewById(R.id.iv_profile_avatar);
         ivQrCode = findViewById(R.id.iv_qr_code_icon);
+        ivAvatarBorder = findViewById(R.id.iv_avatar_border);
         tvUsername = findViewById(R.id.tv_profile_username);
         tvLevel = findViewById(R.id.tv_profile_level);
         tvTitle = findViewById(R.id.tv_profile_title);
         tvPowerPoints = findViewById(R.id.tv_profile_pp);
-        tvXp = findViewById(R.id.tv_profile_xp);
         tvCoins = findViewById(R.id.tv_profile_coins);
-        tvBadgesStatus = findViewById(R.id.tv_badges_status);
-        tvEquipmentStatus = findViewById(R.id.tv_equipment_status);
         btnChangePassword = findViewById(R.id.btn_change_password);
+        pbXpProgress = findViewById(R.id.pb_xp_progress);
+        tvXpDetails = findViewById(R.id.tv_xp_details);
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         ivQrCode.setOnClickListener(v -> showQrCodeDialog());
@@ -91,7 +94,6 @@ public class ProfileActivity extends AppCompatActivity {
         tvPowerPoints.setVisibility(myProfileVisibility);
         tvCoins.setVisibility(myProfileVisibility);
         btnChangePassword.setVisibility(myProfileVisibility);
-        ivQrCode.setVisibility(myProfileVisibility);
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(isMyProfile ? R.string.my_profile : R.string.user_profile);
@@ -136,18 +138,17 @@ public class ProfileActivity extends AppCompatActivity {
                 User user = task.getResult();
                 tvUsername.setText(user.getUsername());
                 tvLevel.setText("Level: " + user.getLevel());
-                tvTitle.setText("Title: " + user.getTitle());
+                tvTitle.setText("(" + user.getTitle() + ")");
                 tvPowerPoints.setText("PP: " + user.getPowerPoints());
-                tvXp.setText("XP: " + user.getXp());
                 tvCoins.setText("Coins: " + user.getCoins());
 
-                tvBadgesStatus.setText(user.getBadgesCount() > 0 ?
-                        "You have " + user.getBadgesCount() + " badges." :
-                        getString(R.string.no_badges_message));
+                int xpToNextLevel = LevelCalculator.getRequiredXpForNextLevel(user.getLevel());
+                pbXpProgress.setMax(xpToNextLevel);
+                pbXpProgress.setProgress(user.getXp());
+                tvXpDetails.setText(user.getXp() + " / " + xpToNextLevel + " XP");
 
-                tvEquipmentStatus.setText((user.getEquipment() != null && !user.getEquipment().isEmpty()) ?
-                        "You have " + user.getEquipmentCount() + " pieces of equipment." :
-                        getString(R.string.no_equipment_message));
+                setAvatarBorder(user.getTitle());
+
 
                 int resId = getResources().getIdentifier(user.getAvatarName(), "drawable", getPackageName());
                 if (resId != 0) {
@@ -159,6 +160,25 @@ public class ProfileActivity extends AppCompatActivity {
                 Toast.makeText(this, "Failed to load user profile.", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void setAvatarBorder(String title) {
+        int drawableResId;
+        switch (title) {
+            case "Adventurer":
+                drawableResId = R.drawable.avatar_border_adventurer;
+                break;
+            case "Journeyman":
+                drawableResId = R.drawable.avatar_border_journeyman;
+                break;
+            case "Hero":
+                drawableResId = R.drawable.avatar_border_hero;
+                break;
+            default:
+                drawableResId = R.drawable.avatar_border_master;
+                break;
+        }
+        ivAvatarBorder.setImageResource(drawableResId);
     }
 
     private void showChangePasswordDialog() {

@@ -101,4 +101,21 @@ public class UserLocalDataSource {
         db.close();
         return userList;
     }
+
+    public void updateUser(User u) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("email", u.getEmail());
+        cv.put("username", u.getUsername());
+        cv.put("avatar_name", u.getAvatarName());
+        cv.put("is_activated", u.isActivated() ? 1 : 0);
+        cv.put("created_at", u.getCreatedAt());
+        cv.put("xp", u.getXp());
+        cv.put("level", u.getLevel());
+        cv.put("title", u.getTitle());
+        cv.put("power_points", u.getPowerPoints());
+        cv.put("coins", u.getCoins());
+        db.update(DatabaseHelper.T_USERS, cv, "id = ?", new String[]{u.getUserId()});
+        db.close();
+    }
 }
