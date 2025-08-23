@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.team21.questify.R;
 import com.team21.questify.application.service.TaskCategoryService;
+import com.team21.questify.presentation.adapter.ColorAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,92 +94,22 @@ public class CreateTaskCategoryActivity extends AppCompatActivity {
         String categoryName = etCategoryName.getText().toString().trim();
 
         if (categoryName.isEmpty()) {
-            Toast.makeText(this, "Molimo unesite ime kategorije.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please choose a category name", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (selectedHexColor == null) {
-            Toast.makeText(this, "Molimo odaberite boju.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please choose a color.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         taskCategoryService.createCategory(categoryName, selectedHexColor, task -> {
             if (task.isSuccessful()) {
-                Toast.makeText(this, "Kategorija je uspešno kreirana!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Category created!", Toast.LENGTH_SHORT).show();
                 finish(); // Zatvara aktivnost i vraća se na prethodnu
             } else {
-                Toast.makeText(this, "Neuspešno kreiranje kategorije: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Category creating failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    // Unutrašnje klase za Adapter i ViewHolder za RecyclerView
-    private class ColorAdapter extends RecyclerView.Adapter<ColorAdapter.ColorViewHolder> {
-
-        private final List<String> colors;
-        private final OnColorSelectedListener listener;
-        private int selectedPosition = RecyclerView.NO_POSITION;
-
-        public ColorAdapter(List<String> colors, OnColorSelectedListener listener) {
-            this.colors = colors;
-            this.listener = listener;
-        }
-
-        @NonNull
-        @Override
-        public ColorViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_color_circle, parent, false);
-            return new ColorViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ColorViewHolder holder, int position) {
-            String hexColor = colors.get(position);
-            holder.bind(hexColor, position == selectedPosition);
-        }
-
-        @Override
-        public int getItemCount() {
-            return colors.size();
-        }
-
-        public class ColorViewHolder extends RecyclerView.ViewHolder {
-            private final View colorCircle;
-            private final View selectionBorder;
-
-            public ColorViewHolder(@NonNull View itemView) {
-                super(itemView);
-                colorCircle = itemView.findViewById(R.id.color_circle);
-                selectionBorder = itemView.findViewById(R.id.selection_border);
-                itemView.setOnClickListener(v -> {
-                    int adapterPosition = getAdapterPosition();
-                    if (adapterPosition != RecyclerView.NO_POSITION) {
-                        int oldPosition = selectedPosition;
-                        selectedPosition = adapterPosition;
-
-                        if (oldPosition != RecyclerView.NO_POSITION) {
-                            notifyItemChanged(oldPosition);
-                        }
-                        notifyItemChanged(selectedPosition);
-
-                        listener.onColorSelected(colors.get(selectedPosition));
-                    }
-                });
-            }
-
-            public void bind(String hexColor, boolean isSelected) {
-                // Postavljanje boje kruga direktno na drawable
-                GradientDrawable background = (GradientDrawable) colorCircle.getBackground();
-                if (background != null) {
-                    background.setColor(Color.parseColor(hexColor));
-                }
-                selectionBorder.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-            }
-        }
-    }
-
-    // Interfejs za slušanje odabira boje
-    private interface OnColorSelectedListener {
-        void onColorSelected(String hexColor);
     }
 }

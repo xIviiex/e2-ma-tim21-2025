@@ -67,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnCreateTask = findViewById(R.id.btn_create_task);
         btnCreateTask.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreateTaskActivity.class);
+            startActivity(intent);
+        });
+
+        Button btnCreateCategory = findViewById(R.id.btn_create_category);
+        btnCreateCategory.setOnClickListener(v -> {
             Intent intent = new Intent(this, CreateTaskCategoryActivity.class);
             startActivity(intent);
         });

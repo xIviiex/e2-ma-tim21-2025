@@ -14,4 +14,6 @@
     <string name="show_qr_code">Show QR Code</string>
     <string name="user_profile">User Profile</string>
     <string name="xp_progress_label">XP progress bar\n</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

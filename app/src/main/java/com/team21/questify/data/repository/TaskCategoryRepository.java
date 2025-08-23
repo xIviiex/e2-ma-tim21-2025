@@ -27,11 +27,13 @@ public class TaskCategoryRepository {
 
     public void createCategory(TaskCategory category, OnCompleteListener<Void> listener) {
 
-        localDataSource.insertCategory(category);
+
         remoteDataSource.insertCategory(category, task -> {
             if (!task.isSuccessful()) {
                 Log.e("TaskCategoryRepository", "Failed to insert category to remote db: " + task.getException());
+
             }
+            localDataSource.insertCategory(category);
             listener.onComplete(task);
         });
     }

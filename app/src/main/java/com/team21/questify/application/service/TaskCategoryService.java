@@ -28,18 +28,12 @@ public class TaskCategoryService {
             TaskCategory newCategory = new TaskCategory(categoryId, userId, name, hexColor);
             repository.createCategory(newCategory, listener);
         } else {
-            // Rukovanje situacijom kada korisnik nije prijavljen
-            // Možda treba prikazati grešku ili preusmeriti korisnika na prijavu.
-            // Za sada, samo vraćamo null ili bacamo izuzetak.
+
             listener.onComplete(null);
         }
     }
 
-    /**
-     * Dohvata sve kategorije za trenutno prijavljenog korisnika.
-     *
-     * @param listener Slušalac za obaveštenje o završetku operacije.
-     */
+
     public void getAllCategoriesForUser(OnCompleteListener<List<TaskCategory>> listener) {
         FirebaseUser user = auth.getCurrentUser();
         if (user != null) {
