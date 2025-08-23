@@ -5,7 +5,7 @@ public class User {
     private String username;
     private String email;
     private String avatarName;
-    private int level = 0;
+    private int level = 1;
     private int xp = 0;
     private boolean isActivated;
     private Long createdAt;

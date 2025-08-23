@@ -197,6 +197,10 @@ public class UserService {
         userRepository.getAllUsers(listener);
     }
 
+    public User getUserById(String userId) {
+        return userRepository.getUserFromLocalDb(userId);
+    }
+
     public void addXpAndCheckLevelUp(String userId, int xpToAdd) {
         userRepository.getUserById(userId, task -> {
             if (task.isSuccessful() && task.getResult() != null) {
