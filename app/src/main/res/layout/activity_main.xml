@@ -34,22 +34,52 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="View My Profile"
+            android:textSize="14sp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_create_category"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btn_create_category"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Category"
+            android:textSize="14sp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/btn_view_my_profile"
             app:layout_constraintEnd_toStartOf="@+id/btn_create_task"
-            app:layout_constraintHorizontal_chainStyle="packed" />
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp" />
 
         <Button
             android:id="@+id/btn_create_task"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create New Task"
-            android:layout_marginStart="16dp"
+            android:textSize="14sp"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btn_view_my_profile"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintStart_toEndOf="@+id/btn_create_category"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp" />
+
+
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
     <TextView

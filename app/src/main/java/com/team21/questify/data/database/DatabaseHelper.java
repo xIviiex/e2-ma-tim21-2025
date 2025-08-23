@@ -9,6 +9,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final int DB_VERSION = 2;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
+    public static final String T_TASKS = "tasks";
+    public static final String T_TASK_OCCURRENCES = "task_occurrences";
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -32,11 +34,45 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         db.execSQL("CREATE TABLE " + T_TASK_CATEGORIES + " (" +
                 "id TEXT PRIMARY KEY, " +
-                "user_id TEXT NOT NULL, " + // Kolona za ID korisnika
+                "user_id TEXT NOT NULL, " +
                 "name TEXT NOT NULL, " +
                 "hex_color TEXT NOT NULL, " +
                 "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                 ")");
+
+
+        db.execSQL("CREATE TABLE " + T_TASKS + " (" +
+                "id TEXT PRIMARY KEY, " +
+                "user_id TEXT NOT NULL, " +
+                "name TEXT NOT NULL, " +
+                "description TEXT, " +
+                "task_category_id TEXT NOT NULL, " +
+                "task_type TEXT NOT NULL, " +
+                "recurrence_unit TEXT, " +
+                "recurring_interval INTEGER, " +
+                "recurring_start_date INTEGER, " +
+                "recurring_end_date INTEGER, " +
+                "execution_time INTEGER NOT NULL, " +
+                "task_difficulty TEXT NOT NULL, " +
+                "task_priority TEXT NOT NULL, " +
+                "xp INTEGER NOT NULL, " +
+                "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE, " +
+                "FOREIGN KEY(task_category_id) REFERENCES " + T_TASK_CATEGORIES + "(id) ON DELETE CASCADE" +
+                ")");
+
+
+        db.execSQL("CREATE TABLE " + T_TASK_OCCURRENCES + " (" +
+                "id TEXT PRIMARY KEY, " +
+                "task_id TEXT NOT NULL, " +
+                "user_id TEXT NOT NULL, " +
+                "date INTEGER NOT NULL, " +
+                "status TEXT NOT NULL, " +
+                "FOREIGN KEY(task_id) REFERENCES " + T_TASKS + "(id) ON DELETE CASCADE, " +
+                "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
+
+
+
     }
 
     @Override
