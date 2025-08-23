@@ -1,13 +1,15 @@
 package com.team21.questify.utils;
 
+import android.util.Log;
+
 public class LevelCalculator {
     public static int getRequiredXpForNextLevel(int currentLevel) {
-        if (currentLevel < 1) {
+        if (currentLevel < 2) {
             return 200;
         }
 
         int previousLevelXp;
-        if (currentLevel == 1) {
+        if (currentLevel == 2) {
             previousLevelXp = 200;
         } else {
             previousLevelXp = getRequiredXpForNextLevel(currentLevel - 1);
@@ -17,21 +19,21 @@ public class LevelCalculator {
         return (int) (Math.ceil(newXp / 100) * 100);
     }
 
-    public static int getPowerPointsForLevel(int currentLevel) {
-        if (currentLevel < 2) {
+    public static int getPowerPointsForLevel(int nextLevel) {
+        if (nextLevel < 2) {
             return 0;
         }
-        if (currentLevel == 2) {
+        if (nextLevel == 2) {
             return 40;
         }
 
-        int previousLevelPp = getPowerPointsForLevel(currentLevel - 1);
+        int previousLevelPp = getPowerPointsForLevel(nextLevel - 1);
         double newPp = previousLevelPp + (0.75 * previousLevelPp);
         return (int) Math.round(newPp);
     }
 
-    public static String getTitleForLevel(int currentLevel) {
-        switch (currentLevel) {
+    public static String getTitleForLevel(int nextLevel) {
+        switch (nextLevel) {
             case 1:
                 return "Adventurer";
             case 2:
@@ -42,4 +44,13 @@ public class LevelCalculator {
                 return "Master";
         }
     }
+
+    public static int getXpForDifficultyOrPriority(int currentLevel, int baseDiffPriorXp) {
+        double xp = baseDiffPriorXp;
+        for (int i = 0; i < currentLevel - 1; i++) {
+            xp = xp + (xp / 2.0);
+        }
+        return (int) Math.round(xp);
+    }
+
 }

@@ -8,6 +8,7 @@ import com.team21.questify.application.model.enums.TaskDifficulty;
 
 import com.team21.questify.application.model.enums.TaskPriority;
 import com.team21.questify.application.model.enums.TaskType;
+import com.team21.questify.utils.LevelCalculator;
 
 
 public class Task {
@@ -177,9 +178,9 @@ public class Task {
     }
 
     // Metoda za izračunavanje i postavljanje XP-a
-    public void calculateAndSetXp() {
-        int difficultyXp = taskDifficulty != null ? taskDifficulty.getXp() : 0;
-        int priorityXp = taskPriority != null ? taskPriority.getXp() : 0;
+    public void calculateAndSetXp(int currentLevel) {
+        int difficultyXp = taskDifficulty != null ? LevelCalculator.getXpForDifficultyOrPriority(currentLevel, taskDifficulty.getXp()) : 0;
+        int priorityXp = taskPriority != null ? LevelCalculator.getXpForDifficultyOrPriority(currentLevel, taskPriority.getXp()) : 0;
         this.xp = difficultyXp + priorityXp;
     }
 

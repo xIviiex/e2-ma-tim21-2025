@@ -25,12 +25,15 @@ import java.util.Calendar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.team21.questify.R;
 import com.team21.questify.application.model.Task;
+import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.RecurrenceUnit;
 import com.team21.questify.application.model.enums.TaskDifficulty;
 import com.team21.questify.application.model.enums.TaskPriority;
 import com.team21.questify.application.model.enums.TaskType;
 import com.team21.questify.application.service.TaskService;
+import com.team21.questify.application.service.UserService;
 import com.team21.questify.presentation.fragment.TaskCategoryFragment;
+import com.team21.questify.utils.SharedPrefs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +60,8 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
 
     private FirebaseAuth firebaseAuth;
     private TaskService taskService;
+    private SharedPrefs sharedPreferences;
+    private UserService userService;
 
     @Override
     public void onCategorySelected(String categoryId) {
@@ -77,6 +82,8 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
 
         firebaseAuth = FirebaseAuth.getInstance();
         taskService = new TaskService(this);
+        sharedPreferences = new SharedPrefs(this);
+        userService = new UserService(this);
 
         initViews();
         setupEnums();
@@ -224,6 +231,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
 
         // Kreiramo Task objekat
         Task newTask = new Task();
+        User user = userService.getUserById(sharedPreferences.getUserUid());
 
         newTask.setName(name);
         newTask.setDescription(description);
@@ -232,7 +240,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         newTask.setTaskDifficulty(difficulty);
         newTask.setTaskPriority(priority);
         newTask.setExecutionTime(executionTimeMillis);
-        newTask.calculateAndSetXp();
+        newTask.calculateAndSetXp(user.getLevel());
 
         if (taskType == TaskType.RECURRING) {
             String intervalStr = etRecurringInterval.getText().toString().trim();

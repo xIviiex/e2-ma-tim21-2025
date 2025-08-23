@@ -45,8 +45,8 @@ public class UserRepository {
         remoteDataSource.loginAuthUser(email, password, listener);
     }
 
-    public User getUserFromLocalDb(String email) {
-        return localDataSource.getUserByEmail(email);
+    public User getUserFromLocalDb(String userId) {
+        return localDataSource.getUserById(userId);
     }
 
     public void fetchUserFromFirebase(String userId, OnCompleteListener<DocumentSnapshot> listener) {
