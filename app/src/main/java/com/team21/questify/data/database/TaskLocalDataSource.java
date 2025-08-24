@@ -8,11 +8,16 @@ import android.database.sqlite.SQLiteDatabase;
 import com.team21.questify.application.model.Task;
 import com.team21.questify.application.model.enums.TaskDifficulty;
 import com.team21.questify.application.model.enums.TaskPriority;
+import com.team21.questify.application.model.enums.TaskStatus;
 import com.team21.questify.application.model.enums.TaskType;
 import com.team21.questify.application.model.enums.RecurrenceUnit;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class TaskLocalDataSource {
     private final DatabaseHelper helper;
@@ -117,4 +122,96 @@ public class TaskLocalDataSource {
         task.setXp(c.getInt(c.getColumnIndexOrThrow("xp")));
         return task;
     }
+
+    public Map<String, Integer> getCompletedTaskCountsByCategory(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Map<String, Integer> counts = new HashMap<>();
+
+        String query = "SELECT " + DatabaseHelper.T_TASK_CATEGORIES + "." + "name" + ", COUNT(" + DatabaseHelper.T_TASKS + "." + "id" + ")" +
+                " FROM " + DatabaseHelper.T_TASKS +
+                " JOIN " + DatabaseHelper.T_TASK_OCCURRENCES + " ON " + DatabaseHelper.T_TASKS + "." + "id" + " = " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "task_id" +
+                " JOIN " + DatabaseHelper.T_TASK_CATEGORIES + " ON " + DatabaseHelper.T_TASKS + "." + "task_category_id" + " = " + DatabaseHelper.T_TASK_CATEGORIES + "." + "id" +
+                " WHERE " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "user_id" + " = ?" +
+                " AND " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "status" + " = '" + TaskStatus.COMPLETED.name() + "'" +
+                " GROUP BY " + DatabaseHelper.T_TASK_CATEGORIES + "." + "name";
+
+        Cursor cursor = db.rawQuery(query, new String[]{userId});
+
+        if (cursor.moveToFirst()) {
+            do {
+                String categoryName = cursor.getString(0);
+                int count = cursor.getInt(1);
+                counts.put(categoryName, count);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return counts;
+    }
+
+    public Map<Long, String> getCompletedTaskDifficultiesWithDates(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Map<Long, String> completedTasks = new HashMap<>();
+
+        String query = "SELECT " + DatabaseHelper.T_TASKS + "." + "task_difficulty" + ", " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "date" +
+                " FROM " + DatabaseHelper.T_TASKS +
+                " JOIN " + DatabaseHelper.T_TASK_OCCURRENCES + " ON " + DatabaseHelper.T_TASKS + "." + "id" + " = " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "task_id" +
+                " WHERE " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "user_id" + " = ?" +
+                " AND " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "status" + " = '" + TaskStatus.COMPLETED.name() + "'";
+
+        Cursor cursor = db.rawQuery(query, new String[]{userId});
+
+        if (cursor.moveToFirst()) {
+            do {
+                completedTasks.put(cursor.getLong(1), cursor.getString(0));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return completedTasks;
+    }
+
+    public Map<String, Integer> getWeeklyXp(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Map<String, Integer> weeklyXp = new HashMap<>();
+
+        long sevenDaysAgo = System.currentTimeMillis() - 7L * 24 * 60 * 60 * 1000;
+
+        String query = "SELECT " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "date" + ", SUM(" + DatabaseHelper.T_TASKS + "." + "xp" + ")" +
+                " FROM " + DatabaseHelper.T_TASKS +
+                " JOIN " + DatabaseHelper.T_TASK_OCCURRENCES + " ON " + DatabaseHelper.T_TASKS + "." + "id" + " = " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "task_id" +
+                " WHERE " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "user_id" + " = ?" +
+                " AND " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "status" + " = '" + TaskStatus.COMPLETED.name() + "'" +
+                " AND " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "date" + " > ?" +
+                " GROUP BY " + DatabaseHelper.T_TASK_OCCURRENCES + "." + "date";
+
+        Cursor cursor = db.rawQuery(query, new String[]{userId, String.valueOf(sevenDaysAgo)});
+
+        if (cursor.moveToFirst()) {
+            do {
+                String dateString = convertTimestampToDateString(cursor.getLong(0));
+                int totalXp = cursor.getInt(1);
+                weeklyXp.put(dateString, totalXp);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return weeklyXp;
+    }
+
+    private String convertTimestampToDateString(Long timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timestamp);
+
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH) + 1;
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        return String.format(Locale.getDefault(), "%04d-%02d-%02d", year, month, day);
+
+    }
+
 }

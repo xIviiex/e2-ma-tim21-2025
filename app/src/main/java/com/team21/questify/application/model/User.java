@@ -12,6 +12,8 @@ public class User {
     private String title = "Adventurer";
     private int powerPoints = 0;
     private int coins = 0;
+    private Long lastActiveDate;
+    private int consecutiveActiveDays = 0;
 
     public User() {}
 
@@ -63,4 +65,18 @@ public class User {
     public void setPowerPoints(int powerPoints) { this.powerPoints = powerPoints; }
     public int getCoins() { return coins; }
     public void setCoins(int coins) { this.coins = coins; }
+    public Long getLastActiveDate() {
+        return lastActiveDate;
+    }
+    public void setLastActiveDate(Long lastActiveDate) {
+        this.lastActiveDate = lastActiveDate;
+    }
+
+    public int getConsecutiveActiveDays() {
+        return consecutiveActiveDays;
+    }
+
+    public void setConsecutiveActiveDays(int consecutiveActiveDays) {
+        this.consecutiveActiveDays = consecutiveActiveDays;
+    }
 }
