@@ -109,8 +109,12 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem logoutItem = menu.findItem(R.id.action_logout);
+        MenuItem statsItem = menu.findItem(R.id.action_statistics);
         if (logoutItem != null) {
             logoutItem.setVisible(isMyProfile);
+        }
+        if (statsItem != null) {
+            statsItem.setVisible(isMyProfile);
         }
         return super.onPrepareOptionsMenu(menu);
     }
@@ -127,6 +131,11 @@ public class ProfileActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
+            return true;
+        }
+        if (item.getItemId() == R.id.action_statistics) {
+            Intent intent = new Intent(this, UserStatisticsActivity.class);
+            startActivity(intent);
             return true;
         }
         return super.onOptionsItemSelected(item);

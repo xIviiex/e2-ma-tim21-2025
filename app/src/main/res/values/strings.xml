@@ -16,4 +16,11 @@
     <string name="xp_progress_label">XP progress bar\n</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="number_of_tasks_by_status">Number of tasks by status</string>
+    <string name="statistics">Statistics</string>
+    <string name="active_days_streak">Active days streak</string>
+    <string name="xp_won_in_the_last_7_days">XP won in the last 7 days</string>
+    <string name="completed_tasks_by_category">Completed tasks by category</string>
+    <string name="completed_tasks_streak">Completed tasks streak</string>
+    <string name="average_difficulty_of_completed_tasks">Average difficulty of completed tasks</string>
 </resources>
