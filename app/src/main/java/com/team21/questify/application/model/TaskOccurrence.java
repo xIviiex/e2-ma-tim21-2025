@@ -2,7 +2,9 @@ package com.team21.questify.application.model;
 
 import com.team21.questify.application.model.enums.TaskStatus;
 
-public class TaskOccurrence {
+import java.io.Serializable;
+
+public class TaskOccurrence implements Serializable {
 
     private String id;
     private String taskId;

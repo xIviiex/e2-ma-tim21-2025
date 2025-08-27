@@ -44,5 +44,9 @@ public class TaskCategoryService {
         }
     }
 
+    public void getCategoryById(String categoryId, OnCompleteListener<TaskCategory> listener) {
+        repository.getCategoryById(categoryId, listener);
+    }
+
 
 }

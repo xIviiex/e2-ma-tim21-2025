@@ -42,6 +42,7 @@ dependencies {
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
     implementation libs.zxing.android.embedded
+    implementation libs.material.calendar.view
     implementation libs.mpandroidchart
     implementation libs.gson
 }

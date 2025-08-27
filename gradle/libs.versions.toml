@@ -12,6 +12,7 @@ googleGmsGoogleServices = "4.4.3"
 firebaseDatabase = "22.0.0"
 firebaseFirestore = "26.0.0"
 firebaseAuth = "24.0.1"
+materialCalendarView = "1.9.0"
 mpandroidchart = "v3.1.0"
 zxingAndroidEmbedded = "4.3.0"
 
@@ -27,6 +28,7 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+material-calendar-view = { module = "com.applandeo:material-calendar-view", version.ref = "materialCalendarView" }
 mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
 

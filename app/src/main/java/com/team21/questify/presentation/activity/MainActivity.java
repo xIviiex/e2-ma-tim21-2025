@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -103,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        findViewById(R.id.iv_calendar_icon).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ViewTasksActivity.class);
+            startActivity(intent);
+        });
     }
 
 }

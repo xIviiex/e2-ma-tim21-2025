@@ -20,6 +20,9 @@
             android:name=".presentation.activity.FriendsActivity"
             android:exported="false" />
         <activity
+            android:name=".presentation.activity.ViewTasksActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activity.UserStatisticsActivity"
             android:exported="false" />
         <activity

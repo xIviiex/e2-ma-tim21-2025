@@ -63,4 +63,27 @@ public class TaskCategoryRepository {
     }
 
 
+    public void getCategoryById(String categoryId, OnCompleteListener<TaskCategory> listener) {
+        TaskCategory localCategory = localDataSource.getCategoryById(categoryId);
+        if (localCategory != null) {
+            listener.onComplete(Tasks.forResult(localCategory));
+            return;
+        }
+
+        remoteDataSource.getCategoryById(categoryId, task -> {
+            if (task.isSuccessful() && task.getResult().exists()) {
+                TaskCategory remoteCategory = task.getResult().toObject(TaskCategory.class);
+                if (remoteCategory != null) {
+                    localDataSource.insertCategory(remoteCategory);
+                    listener.onComplete(Tasks.forResult(remoteCategory));
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("Failed to convert document to TaskCategory.")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(task.getException() != null ? task.getException() : new Exception("Category not found.")));
+            }
+        });
+    }
+
+
 }

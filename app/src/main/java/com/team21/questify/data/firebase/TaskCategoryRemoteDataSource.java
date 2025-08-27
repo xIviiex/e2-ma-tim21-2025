@@ -3,6 +3,7 @@ package com.team21.questify.data.firebase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.TaskCategory;
@@ -28,6 +29,13 @@ public class TaskCategoryRemoteDataSource {
     public void getAllCategoriesForUser(String userId, OnCompleteListener<QuerySnapshot> listener) {
         db.collection(CATEGORIES_COLLECTION)
                 .whereEqualTo("userId", userId)
+                .get()
+                .addOnCompleteListener(listener);
+    }
+
+    public void getCategoryById(String categoryId, OnCompleteListener<DocumentSnapshot> listener) {
+        db.collection(CATEGORIES_COLLECTION)
+                .document(categoryId)
                 .get()
                 .addOnCompleteListener(listener);
     }

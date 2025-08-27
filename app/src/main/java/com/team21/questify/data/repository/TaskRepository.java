@@ -41,34 +41,61 @@ public class TaskRepository {
         });
     }
 
-    /*
+
     public void getAllTasksForUser(String userId, OnCompleteListener<List<Task>> listener) {
         List<Task> localTasks = localDataSource.getAllTasksForUser(userId);
-        if (!localTasks.isEmpty()) {
-            // Ako postoje lokalni podaci, odmah ih vrati
-            listener.onComplete(Tasks.forResult(localTasks));
-        }
 
-        // Uvek pokušaj preuzimanje sa Firebase-a radi sinhronizacije
         remoteDataSource.getAllTasksForUser(userId, taskRemote -> {
-            if (taskRemote.isSuccessful()) {
+            if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
                 List<Task> remoteTasks = new ArrayList<>();
                 for (QueryDocumentSnapshot document : taskRemote.getResult()) {
                     Task task = document.toObject(Task.class);
                     remoteTasks.add(task);
-                    // Sinhronizacija u lokalnu bazu
                     localDataSource.insertTask(task);
                 }
-                // Vrati ažurirane podatke sa Firebase-a
                 listener.onComplete(Tasks.forResult(remoteTasks));
             } else {
-                // Ako Firebase operacija ne uspe i nema lokalnih podataka, obavesti o grešci
-                if (localTasks.isEmpty()) {
+                if (!localTasks.isEmpty()) {
+                    listener.onComplete(Tasks.forResult(localTasks));
+                } else {
                     listener.onComplete(Tasks.forException(taskRemote.getException()));
                 }
             }
         });
-    }*/
+    }
+
+    public void getTaskById(String taskId, OnCompleteListener<Task> listener) {
+
+        Task localTask = localDataSource.getTaskById(taskId);
+        if (localTask != null) {
+
+            listener.onComplete(Tasks.forResult(localTask));
+            return;
+        }
+
+        // 2. If not found locally, query the remote database
+        remoteDataSource.getTaskById(taskId, remoteTaskResult -> {
+            if (remoteTaskResult.isSuccessful() && remoteTaskResult.getResult() != null && remoteTaskResult.getResult().exists()) {
+                // Convert the DocumentSnapshot to a Task object
+                Task remoteTask = remoteTaskResult.getResult().toObject(Task.class);
+
+                if (remoteTask != null) {
+                    // Insert the fetched task into the local database for future offline access
+                    localDataSource.insertTask(remoteTask);
+                    listener.onComplete(Tasks.forResult(remoteTask));
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("Failed to convert remote data to Task object.")));
+                }
+
+            } else {
+                // Task not found in remote database, or there was an error
+                Exception exception = remoteTaskResult.getException() != null ? remoteTaskResult.getException() : new Exception("Task not found.");
+                listener.onComplete(Tasks.forException(exception));
+            }
+        });
+    }
+
+    
 
     public Map<String, Integer> getCompletedTaskCountsByCategory(String userId) {
         return localDataSource.getCompletedTaskCountsByCategory(userId);
@@ -91,5 +118,6 @@ public class TaskRepository {
     public Map<String, Integer> getWeeklyXp(String userId) {
         return localDataSource.getWeeklyXp(userId);
     }
+
 }
 
