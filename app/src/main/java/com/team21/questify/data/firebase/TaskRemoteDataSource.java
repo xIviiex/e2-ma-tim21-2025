@@ -3,6 +3,7 @@ package com.team21.questify.data.firebase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.Task;
@@ -36,6 +37,12 @@ public class TaskRemoteDataSource {
                 .addOnCompleteListener(listener);
     }
 
+    public void getTaskById(String taskId, OnCompleteListener<DocumentSnapshot> listener) {
+        db.collection(TASKS_COLLECTION)
+                .document(taskId)
+                .get()
+                .addOnCompleteListener(listener);
+    }
 
 
     public void updateTask(String taskId, Map<String, Object> updates, OnCompleteListener<Void> listener) {

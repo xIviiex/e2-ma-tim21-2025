@@ -110,6 +110,11 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        findViewById(R.id.iv_calendar_icon).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ViewTasksActivity.class);
+            startActivity(intent);
+        });
+
         rvUsers = findViewById(R.id.rv_users);
         rvUsers.setLayoutManager(new LinearLayoutManager(this));
     }

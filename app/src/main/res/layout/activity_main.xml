@@ -8,6 +8,18 @@
     android:padding="16dp"
     tools:context=".presentation.activity.MainActivity">
 
+    <ImageView
+        android:id="@+id/iv_calendar_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginTop="4dp"
+        android:src="@drawable/ic_calendar"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/tv_welcome_title"
         android:layout_width="wrap_content"

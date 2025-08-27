@@ -2,6 +2,7 @@ package com.team21.questify.presentation.activity;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
@@ -249,16 +250,36 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
                 return;
             }
 
+
+
             int interval = Integer.parseInt(intervalStr);
+            try {
+                interval = Integer.parseInt(intervalStr);
+                if (interval <= 0) {
+                    etRecurringInterval.setError("Interval must be greater than 0");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                etRecurringInterval.setError("Invalid number");
+                return;
+            }
+
+
             RecurrenceUnit unit = RecurrenceUnit.valueOf(spinnerRecurrenceUnit.getSelectedItem().toString());
 
             Calendar startCal = Calendar.getInstance();
             startCal.clear();
             startCal.set(dpStartDate.getYear(), dpStartDate.getMonth(), dpStartDate.getDayOfMonth());
 
+
             Calendar endCal = Calendar.getInstance();
             endCal.clear();
             endCal.set(dpEndDate.getYear(), dpEndDate.getMonth(), dpEndDate.getDayOfMonth());
+
+            if (endCal.before(startCal)) {
+                Toast.makeText(this, "End date cannot be before start date", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
 
             newTask.setRecurringInterval(interval);

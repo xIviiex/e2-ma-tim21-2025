@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
+            android:name=".presentation.activity.ViewTasksActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activity.UserStatisticsActivity"
             android:exported="false" />
         <activity
