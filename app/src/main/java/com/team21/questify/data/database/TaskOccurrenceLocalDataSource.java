@@ -9,7 +9,9 @@ import com.team21.questify.application.model.TaskOccurrence;
 import com.team21.questify.application.model.enums.TaskStatus;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TaskOccurrenceLocalDataSource {
     private final DatabaseHelper helper;
@@ -87,5 +89,53 @@ public class TaskOccurrenceLocalDataSource {
         String statusStr = c.getString(c.getColumnIndexOrThrow("status"));
         occurrence.setStatus(statusStr != null ? TaskStatus.valueOf(statusStr) : null);
         return occurrence;
+    }
+
+    public Map<String, Integer> getTaskCountsByStatus(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Map<String, Integer> counts = new HashMap<>();
+
+        String query = "SELECT " + "status" + ", COUNT(*)" +
+                " FROM " + DatabaseHelper.T_TASK_OCCURRENCES +
+                " WHERE " + "user_id" + " = ?" +
+                " GROUP BY " + "status";
+
+        Cursor cursor = db.rawQuery(query, new String[]{userId});
+
+        if (cursor.moveToFirst()) {
+            do {
+                String statusString = cursor.getString(0);
+                int count = cursor.getInt(1);
+                counts.put(statusString, count);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return counts;
+    }
+
+    public List<TaskOccurrence> getTaskOccurrencesByUserIdSortedByDate(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+
+        String selection = "user_id" + " = ?";
+        String orderBy = "date" + " ASC";
+
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES,
+                null,
+                selection,
+                new String[]{userId},
+                null,
+                null,
+                orderBy);
+
+        if (c.moveToFirst()) {
+            do {
+                occurrences.add(cursorToTaskOccurrence(c));
+            } while (c.moveToNext());
+            c.close();
+        }
+        db.close();
+        return occurrences;
     }
 }

@@ -28,6 +28,11 @@ public class UserLocalDataSource {
         cv.put("created_at", u.getCreatedAt());
         cv.put("level", u.getLevel());
         cv.put("xp", u.getXp());
+        cv.put("title", u.getTitle());
+        cv.put("power_points", u.getPowerPoints());
+        cv.put("coins", u.getCoins());
+        cv.put("last_active_date", u.getLastActiveDate());
+        cv.put("consecutive_active_days", u.getConsecutiveActiveDays());
         db.insert(DatabaseHelper.T_USERS, null, cv);
         db.close();
     }
@@ -65,6 +70,12 @@ public class UserLocalDataSource {
         u.setCreatedAt(c.getLong(c.getColumnIndexOrThrow("created_at")));
         u.setXp(c.getInt(c.getColumnIndexOrThrow("xp")));
         u.setLevel(c.getInt(c.getColumnIndexOrThrow("level")));
+        u.setTitle(c.getString(c.getColumnIndexOrThrow("title")));
+        u.setPowerPoints(c.getInt(c.getColumnIndexOrThrow("power_points")));
+        u.setCoins(c.getInt(c.getColumnIndexOrThrow("coins")));
+        u.setLastActiveDate(c.getLong(c.getColumnIndexOrThrow("last_active_date")));
+        u.setConsecutiveActiveDays(c.getInt(c.getColumnIndexOrThrow("consecutive_active_days")));
+
         return u;
     }
 
@@ -115,6 +126,11 @@ public class UserLocalDataSource {
         cv.put("title", u.getTitle());
         cv.put("power_points", u.getPowerPoints());
         cv.put("coins", u.getCoins());
+        cv.put("title", u.getTitle());
+        cv.put("power_points", u.getPowerPoints());
+        cv.put("coins", u.getCoins());
+        cv.put("last_active_date", u.getLastActiveDate());
+        cv.put("consecutive_active_days", u.getConsecutiveActiveDays());
         db.update(DatabaseHelper.T_USERS, cv, "id = ?", new String[]{u.getUserId()});
         db.close();
     }
