@@ -94,21 +94,29 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void setupProfileVisibility() {
         int myProfileVisibility = isMyProfile ? View.VISIBLE : View.GONE;
-
         tvPowerPoints.setVisibility(myProfileVisibility);
         tvCoins.setVisibility(myProfileVisibility);
         btnChangePassword.setVisibility(myProfileVisibility);
 
-        List<String> friendsIds = userService.getUserById(sharedPreferences.getUserUid()).getFriendsIds();
-        boolean isFriend = friendsIds != null && friendsIds.contains(currentUserId);
-        if (isMyProfile || isFriend) {
-            btnAddFriend.setVisibility(View.GONE);
-        } else {
-            btnAddFriend.setVisibility(View.VISIBLE);
-        }
-
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(isMyProfile ? R.string.my_profile : R.string.user_profile);
+        }
+
+        if (!isMyProfile) {
+            userService.fetchUserProfile(currentUserId, userTask -> {
+                if (userTask.isSuccessful() && userTask.getResult() != null) {
+                    List<String> friendsIds = userTask.getResult().getFriendsIds();
+                    if (friendsIds != null && friendsIds.contains(profileUserId)) {
+                        btnAddFriend.setVisibility(View.GONE);
+                    } else {
+                        btnAddFriend.setVisibility(View.VISIBLE);
+                    }
+                } else {
+                    btnAddFriend.setVisibility(View.VISIBLE);
+                }
+            });
+        } else {
+            btnAddFriend.setVisibility(View.GONE);
         }
     }
 
@@ -163,36 +171,29 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void addFriend() {
-        userService.fetchUserProfile(profileUserId, userTask -> {
-            if (!userTask.isSuccessful() || userTask.getResult() == null) {
-                Toast.makeText(this, "Failed to fetch user data.", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        if (isMyProfile) {
+            Toast.makeText(this, "You can't add yourself as a friend.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-            User user = userTask.getResult();
-            String profileUsername = user.getUsername();
+        btnAddFriend.setEnabled(false);
 
-            userService.addFriend(currentUserId, profileUserId, addFriendTask -> {
-                if (addFriendTask.isSuccessful()) {
-                    userService.addFriend(profileUserId, currentUserId, reverseAddTask -> {
-                        if (reverseAddTask.isSuccessful()) {
-                            Toast.makeText(this, "You and " + profileUsername + " are now friends!", Toast.LENGTH_SHORT).show();
-                            btnAddFriend.setVisibility(View.GONE);
-                        } else {
-                            Toast.makeText(this, "Failed to complete friendship.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                } else {
-                    String errorMessage = addFriendTask.getException() != null ? addFriendTask.getException().getMessage() : "Unknown error.";
-
+        userService.addFriendship(currentUserId, profileUserId)
+                .addOnSuccessListener(username -> {
+                    Toast.makeText(this, "You and " + username + " are now friends!", Toast.LENGTH_SHORT).show();
+                    btnAddFriend.setVisibility(View.GONE);
+                    btnAddFriend.setEnabled(true);
+                })
+                .addOnFailureListener(e -> {
+                    btnAddFriend.setEnabled(true);
+                    String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error.";
                     if (errorMessage.contains("already a friend")) {
                         Toast.makeText(this, "User is already a friend.", Toast.LENGTH_SHORT).show();
+                        btnAddFriend.setVisibility(View.GONE);
                     } else {
                         Toast.makeText(this, "Failed to add friend: " + errorMessage, Toast.LENGTH_SHORT).show();
                     }
-                }
-            });
-        });
+                });
     }
 
     private void loadUserProfile(String userId) {

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -111,6 +112,24 @@ public class UserRepository {
         });
     }
 
+    public Task<User> getUserById(String userId) {
+        User localUser = localDataSource.getUserById(userId);
+        if (localUser != null) {
+            return Tasks.forResult(localUser);
+        }
+        return remoteDataSource.fetchUserFromFirestore(userId).continueWith(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User remoteUser = task.getResult().toObject(User.class);
+                if (remoteUser != null) {
+                    localDataSource.insertUser(remoteUser);
+                }
+                return remoteUser;
+            } else {
+                throw task.getException();
+            }
+        });
+    }
+
     public void getAllUsers(OnCompleteListener<List<User>> onCompleteListener) {
         List<User> localUsers = localDataSource.getAllUsers();
         if (!localUsers.isEmpty()) {
@@ -162,28 +181,18 @@ public class UserRepository {
         });
     }
 
-    public void addFriend(String currentUserId, String friendIdToAdd, OnCompleteListener<Void> listener) {
-        getUserById(currentUserId, task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                User currentUser = task.getResult();
-                List<String> friends = new ArrayList<>(currentUser.getFriendsIds());
-
-                if (!friends.contains(friendIdToAdd)) {
-                    friends.add(friendIdToAdd);
-                    currentUser.setFriendsIds(friends);
-
-                    remoteDataSource.updateFriendsList(currentUserId, friends, updateTask -> {
-                        if (updateTask.isSuccessful()) {
-                            localDataSource.updateUser(currentUser);
+    public Task<Void> addFriend(String currentUserId, String friendIdToAdd) {
+        return remoteDataSource.addFriend(currentUserId, friendIdToAdd)
+                .addOnSuccessListener(aVoid -> {
+                    User localUser = localDataSource.getUserById(currentUserId);
+                    if (localUser != null) {
+                        List<String> friends = new ArrayList<>(localUser.getFriendsIds());
+                        if (!friends.contains(friendIdToAdd)) {
+                            friends.add(friendIdToAdd);
+                            localUser.setFriendsIds(friends);
+                            localDataSource.updateUser(localUser);
                         }
-                        listener.onComplete(updateTask);
-                    });
-                } else {
-                    listener.onComplete(Tasks.forException(new Exception("User is already a friend.")));
-                }
-            } else {
-                listener.onComplete(Tasks.forException(new Exception("Failed to fetch user data.")));
-            }
-        });
+                    }
+                });
     }
 }

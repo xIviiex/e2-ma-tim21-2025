@@ -1,5 +1,7 @@
 package com.team21.questify.presentation.activity;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -71,7 +73,7 @@ public class FriendsActivity extends AppCompatActivity implements UsersAdapter.O
     }
 
     private void setupRecyclerView() {
-        userAdapter = new UsersAdapter(new ArrayList<>(), this, sharedPrefs, userService);
+        userAdapter = new UsersAdapter(new ArrayList<>(), new ArrayList<>(), this, currentUserId);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(userAdapter);
     }
@@ -101,57 +103,73 @@ public class FriendsActivity extends AppCompatActivity implements UsersAdapter.O
     }
 
     private void loadFriendsList() {
-        userService.fetchAllUsers(task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                List<User> allUsers = task.getResult();
-                List<User> friends = new ArrayList<>();
-                List<String> friendIds = userService.getUserById(currentUserId).getFriendsIds();
-                if (friendIds != null) {
-                    for (User user : allUsers) {
-                        if (friendIds.contains(user.getUserId())) {
-                            friends.add(user);
+        userService.fetchUserProfile(currentUserId, userTask -> {
+            if (userTask.isSuccessful() && userTask.getResult() != null) {
+                List<String> friendsIds = userTask.getResult().getFriendsIds();
+
+                userService.fetchAllUsers(allUsersTask -> {
+                    if (allUsersTask.isSuccessful() && allUsersTask.getResult() != null) {
+                        List<User> allUsers = allUsersTask.getResult();
+                        List<User> friends = new ArrayList<>();
+                        if (friendsIds != null) {
+                            for (User user : allUsers) {
+                                if (friendsIds.contains(user.getUserId())) {
+                                    friends.add(user);
+                                }
+                            }
                         }
+                        userAdapter.updateLists(friends, friendsIds);
+                        updateUIForFriendsList(friends);
+                    } else {
+                        Toast.makeText(this, "Failed to fetch all users.", Toast.LENGTH_SHORT).show();
+                        updateUIForFriendsList(new ArrayList<>());
                     }
-                }
-                userAdapter.updateList(friends);
-                if (friends.isEmpty()) {
-                    tvNoFriends.setVisibility(View.VISIBLE);
-                    recyclerView.setVisibility(View.GONE);
-                } else {
-                    tvNoFriends.setVisibility(View.GONE);
-                    recyclerView.setVisibility(View.VISIBLE);
-                }
-                tvFriendsTitle.setVisibility(View.VISIBLE);
+                });
             } else {
-                Toast.makeText(this, "Failed to load friends.", Toast.LENGTH_SHORT).show();
-                tvNoFriends.setVisibility(View.VISIBLE);
-                tvNoFriends.setText(R.string.failed_to_load_friends);
-                recyclerView.setVisibility(View.GONE);
-                tvFriendsTitle.setVisibility(View.GONE);
+                Toast.makeText(this, "Failed to load current user data.", Toast.LENGTH_SHORT).show();
+                updateUIForFriendsList(new ArrayList<>());
             }
         });
     }
 
+    private void updateUIForFriendsList(List<User> friends) {
+        if (friends.isEmpty()) {
+            tvNoFriends.setVisibility(View.VISIBLE);
+            tvNoFriends.setText(R.string.no_friends_message);
+            recyclerView.setVisibility(View.GONE);
+        } else {
+            tvNoFriends.setVisibility(View.GONE);
+            recyclerView.setVisibility(View.VISIBLE);
+        }
+        tvFriendsTitle.setVisibility(View.VISIBLE);
+    }
+
     private void searchUsers(String query) {
-        userService.searchUsers(query, task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                List<User> searchResults = task.getResult();
-                userAdapter.updateList(searchResults);
-                if (searchResults.isEmpty()) {
-                    tvNoFriends.setVisibility(View.VISIBLE);
-                    tvNoFriends.setText(R.string.no_users_found_matching_your_search);
-                    recyclerView.setVisibility(View.GONE);
-                } else {
-                    tvNoFriends.setVisibility(View.GONE);
-                    recyclerView.setVisibility(View.VISIBLE);
-                }
-                tvFriendsTitle.setVisibility(View.GONE);
-            } else {
-                Toast.makeText(this, "Search failed.", Toast.LENGTH_SHORT).show();
-                tvNoFriends.setVisibility(View.VISIBLE);
-                tvNoFriends.setText(R.string.search_failed);
-                recyclerView.setVisibility(View.GONE);
-                tvFriendsTitle.setVisibility(View.GONE);
+        userService.fetchUserProfile(currentUserId, userTask -> {
+            if (userTask.isSuccessful() && userTask.getResult() != null) {
+                List<String> friendsIds = userTask.getResult().getFriendsIds();
+
+                userService.searchUsers(query, searchTask -> {
+                    if (searchTask.isSuccessful() && searchTask.getResult() != null) {
+                        List<User> searchResults = searchTask.getResult();
+                        userAdapter.updateLists(searchResults, friendsIds);
+                        if (searchResults.isEmpty()) {
+                            tvNoFriends.setVisibility(View.VISIBLE);
+                            tvNoFriends.setText(R.string.no_users_found_matching_your_search);
+                            recyclerView.setVisibility(View.GONE);
+                        } else {
+                            tvNoFriends.setVisibility(View.GONE);
+                            recyclerView.setVisibility(View.VISIBLE);
+                        }
+                        tvFriendsTitle.setVisibility(View.GONE);
+                    } else {
+                        Toast.makeText(this, "Search failed.", Toast.LENGTH_SHORT).show();
+                        tvNoFriends.setVisibility(View.VISIBLE);
+                        tvNoFriends.setText(R.string.search_failed);
+                        recyclerView.setVisibility(View.GONE);
+                        tvFriendsTitle.setVisibility(View.GONE);
+                    }
+                });
             }
         });
     }
@@ -212,30 +230,28 @@ public class FriendsActivity extends AppCompatActivity implements UsersAdapter.O
     }
 
     private void performAddFriend(String friendUserId) {
-        if (friendUserId.equals(currentUserId)) {
-            Toast.makeText(this, "You can't add yourself as a friend.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        userService.addFriend(currentUserId, friendUserId, task -> {
-            if (task.isSuccessful()) {
-                userService.addFriend(friendUserId, currentUserId, reverseTask -> {
-                    if (reverseTask.isSuccessful()) {
-                        Toast.makeText(this, "Friend added successfully via QR code!", Toast.LENGTH_SHORT).show();
-                        loadFriendsList();
+        userService.addFriendship(currentUserId, friendUserId)
+                .addOnSuccessListener(username -> {
+                    Toast.makeText(this, "You and " + username + " are now friends!", Toast.LENGTH_SHORT).show();
+                    updateUiAfterFriendAdded(friendUserId);
+                })
+                .addOnFailureListener(e -> {
+                    String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error.";
+                    if (errorMessage.contains("already a friend")) {
+                        Toast.makeText(this, "User is already a friend.", Toast.LENGTH_SHORT).show();
+                        updateUiAfterFriendAdded(friendUserId);
                     } else {
-                        Toast.makeText(this, "Failed to complete friendship.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Failed to add friend: " + errorMessage, Toast.LENGTH_SHORT).show();
                     }
                 });
-            } else {
-                String errorMessage = task.getException() != null ? task.getException().getMessage() : "Unknown error.";
+    }
 
-                if (errorMessage.contains("already a friend")) {
-                    Toast.makeText(this, "User is already a friend.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "Failed to add friend: " + errorMessage, Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
+    private void updateUiAfterFriendAdded(String friendId) {
+        List<String> currentFriends = userAdapter.getFriendsIds();
+        if (!currentFriends.contains(friendId)) {
+            currentFriends.add(friendId);
+            userAdapter.setFriendsIds(currentFriends);
+            userAdapter.notifyDataSetChanged();
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.team21.questify.application.service;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.team21.questify.utils.LevelCalculator;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -245,13 +246,28 @@ public class UserService {
         userRepository.searchUsers(query, listener);
     }
 
-    public void addFriend(String currentUserId, String userIdToAdd, OnCompleteListener<Void> listener) {
+    public Task<String> addFriendship(String currentUserId, String friendIdToAdd) {
         if (currentUserId == null || currentUserId.isEmpty()) {
-            listener.onComplete(Tasks.forException(new Exception("User not logged in.")));
-            return;
+            return Tasks.forException(new Exception("User not logged in."));
         }
 
-        userRepository.addFriend(currentUserId, userIdToAdd, listener);
+        Task<Void> addCurrentToFriend = userRepository.addFriend(currentUserId, friendIdToAdd);
+        Task<Void> addFriendToCurrent = userRepository.addFriend(friendIdToAdd, currentUserId);
+
+        return Tasks.whenAll(addCurrentToFriend, addFriendToCurrent)
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+                        return userRepository.getUserById(friendIdToAdd)
+                                .continueWith(userTask -> {
+                                    if (userTask.isSuccessful() && userTask.getResult() != null) {
+                                        return userTask.getResult().getUsername();
+                                    }
+                                    throw userTask.getException();
+                                });
+                    } else {
+                        throw task.getException();
+                    }
+                });
     }
 
 }
