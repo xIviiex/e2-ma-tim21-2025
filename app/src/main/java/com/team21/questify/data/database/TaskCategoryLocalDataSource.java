@@ -55,4 +55,20 @@ public class TaskCategoryLocalDataSource {
         db.close();
         return categoryList;
     }
+
+
+    public TaskCategory getCategoryById(String categoryId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        TaskCategory category = null;
+        Cursor c = db.query(DatabaseHelper.T_TASK_CATEGORIES, null,
+                "id" + "=?", new String[]{categoryId},
+                null, null, null);
+
+        if (c != null && c.moveToFirst()) {
+            category = cursorToTaskCategory(c);
+            c.close();
+        }
+        db.close();
+        return category;
+    }
 }

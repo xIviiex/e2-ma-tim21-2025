@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.team21.questify.application.model.Task;
@@ -18,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
+import java.util.List;
 import java.util.UUID;
 
 public class TaskService {
@@ -136,6 +138,38 @@ public class TaskService {
             }
         });
     }
+
+
+
+    public void getAllTasksForCurrentUser(OnCompleteListener<List<Task>> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+
+        String userId = user.getUid();
+
+        repository.getAllTasksForUser(userId, taskResult -> {
+            if (taskResult.isSuccessful()) {
+                listener.onComplete(taskResult);
+            } else {
+                Log.e(TAG, "Failed to fetch tasks: " + taskResult.getException());
+                listener.onComplete(taskResult);
+            }
+        });
+    }
+
+    public void getTaskById(String taskId, OnCompleteListener<Task> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+
+        repository.getTaskById(taskId, listener);
+    }
+
 
 
 }

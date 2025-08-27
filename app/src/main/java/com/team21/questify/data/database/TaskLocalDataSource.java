@@ -41,61 +41,87 @@ public class TaskLocalDataSource {
         db.insert(DatabaseHelper.T_TASKS, null, cv);
         db.close();
     }
-/*
+
+    public List<Task> getAllTasksForUser(String userId) {
+        List<Task> tasks = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        Cursor c = db.query(DatabaseHelper.T_TASKS, null,
+                "user_id = ?", new String[]{userId},
+                null, null, null);
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                Task task = cursorToTask(c);
+                tasks.add(task);
+            }
+            c.close();
+        }
+
+        db.close();
+        return tasks;
+    }
+
     public Task getTaskById(String taskId) {
         SQLiteDatabase db = helper.getReadableDatabase();
-        Cursor c = db.query(DatabaseHelper.T_TASKS, null,
-                "id = ?", new String[]{taskId},
-                null, null, null);
         Task task = null;
+
+        Cursor c = db.query(DatabaseHelper.T_TASKS,
+                null, // all columns
+                "id = ?", // where clause
+                new String[]{taskId}, // where args
+                null, null, null);
+
         if (c != null && c.moveToFirst()) {
             task = cursorToTask(c);
             c.close();
         }
+
         db.close();
         return task;
     }
 
-    public List<Task> getAllTasks() {
-        List<Task> taskList = new ArrayList<>();
-        SQLiteDatabase db = helper.getReadableDatabase();
-        Cursor c = db.query(DatabaseHelper.T_TASKS, null, null, null, null, null, null);
-        if (c != null && c.moveToFirst()) {
-            do {
-                taskList.add(cursorToTask(c));
-            } while (c.moveToNext());
-            c.close();
+    /*
+        public List<Task> getAllTasks() {
+            List<Task> taskList = new ArrayList<>();
+            SQLiteDatabase db = helper.getReadableDatabase();
+            Cursor c = db.query(DatabaseHelper.T_TASKS, null, null, null, null, null, null);
+            if (c != null && c.moveToFirst()) {
+                do {
+                    taskList.add(cursorToTask(c));
+                } while (c.moveToNext());
+                c.close();
+            }
+            db.close();
+            return taskList;
         }
-        db.close();
-        return taskList;
-    }
 
-   public void updateTask(Task task) {
-        SQLiteDatabase db = helper.getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put("user_id", task.getUserId());
-        cv.put("name", task.getName());
-        cv.put("description", task.getDescription());
-        cv.put("task_category_id", task.getTaskCategoryId());
-        cv.put("task_type", task.getTaskType().name());
-        cv.put("recurrence_unit", task.getRecurrenceUnit() != null ? task.getRecurrenceUnit().name() : null);
-        cv.put("recurring_interval", task.getRecurringInterval());
-        cv.put("recurring_start_date", task.getRecurringStartDate());
-        cv.put("recurring_end_date", task.getRecurringEndDate());
-        cv.put("execution_time", task.getExecutionTime());
-        cv.put("task_difficulty", task.getTaskDifficulty().name());
-        cv.put("task_priority", task.getTaskPriority().name());
-        cv.put("xp", task.getXp());
-        db.update(DatabaseHelper.T_TASKS, cv, "id = ?", new String[]{task.getId()});
-        db.close();
-    }
+       public void updateTask(Task task) {
+            SQLiteDatabase db = helper.getWritableDatabase();
+            ContentValues cv = new ContentValues();
+            cv.put("user_id", task.getUserId());
+            cv.put("name", task.getName());
+            cv.put("description", task.getDescription());
+            cv.put("task_category_id", task.getTaskCategoryId());
+            cv.put("task_type", task.getTaskType().name());
+            cv.put("recurrence_unit", task.getRecurrenceUnit() != null ? task.getRecurrenceUnit().name() : null);
+            cv.put("recurring_interval", task.getRecurringInterval());
+            cv.put("recurring_start_date", task.getRecurringStartDate());
+            cv.put("recurring_end_date", task.getRecurringEndDate());
+            cv.put("execution_time", task.getExecutionTime());
+            cv.put("task_difficulty", task.getTaskDifficulty().name());
+            cv.put("task_priority", task.getTaskPriority().name());
+            cv.put("xp", task.getXp());
+            db.update(DatabaseHelper.T_TASKS, cv, "id = ?", new String[]{task.getId()});
+            db.close();
+        }
 
-    public void deleteTask(String taskId) {
-        SQLiteDatabase db = helper.getWritableDatabase();
-        db.delete(DatabaseHelper.T_TASKS, "id = ?", new String[]{taskId});
-        db.close();
-    }
-*/
+        public void deleteTask(String taskId) {
+            SQLiteDatabase db = helper.getWritableDatabase();
+            db.delete(DatabaseHelper.T_TASKS, "id = ?", new String[]{taskId});
+            db.close();
+        }
+    */
     private Task cursorToTask(Cursor c) {
         Task task = new Task();
         task.setId(c.getString(c.getColumnIndexOrThrow("id")));

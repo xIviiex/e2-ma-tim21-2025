@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
+            android:name=".presentation.activity.ViewTasksActivity"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.activity.TaskCalendarActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activity.CreateTaskActivity"
             android:exported="false" />
         <activity

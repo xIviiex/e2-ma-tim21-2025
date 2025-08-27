@@ -29,36 +29,33 @@ public class TaskOccurrenceLocalDataSource {
         db.insert(DatabaseHelper.T_TASK_OCCURRENCES, null, cv);
         db.close();
     }
-/*
-    public TaskOccurrence getTaskOccurrenceById(String id) {
+
+
+    public List<TaskOccurrence> getAllOccurrencesForUser(String userId) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
         SQLiteDatabase db = helper.getReadableDatabase();
+
         Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null,
-                "id = ?", new String[]{id},
+                "user_id = ?", new String[]{userId},
                 null, null, null);
-        TaskOccurrence occurrence = null;
-        if (c != null && c.moveToFirst()) {
-            occurrence = cursorToTaskOccurrence(c);
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                TaskOccurrence occurrence = cursorToTaskOccurrence(c);
+                occurrences.add(occurrence);
+            }
             c.close();
         }
+
         db.close();
-        return occurrence;
+        return occurrences;
     }
 
-    public List<TaskOccurrence> getAllTaskOccurrences() {
-        List<TaskOccurrence> list = new ArrayList<>();
-        SQLiteDatabase db = helper.getReadableDatabase();
-        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null,
-                null, null, null, null, null);
-        if (c != null && c.moveToFirst()) {
-            do {
-                list.add(cursorToTaskOccurrence(c));
-            } while (c.moveToNext());
-            c.close();
-        }
-        db.close();
-        return list;
-    }
 
+
+
+
+/*
     public void updateTaskOccurrence(TaskOccurrence occurrence) {
         SQLiteDatabase db = helper.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -76,6 +73,11 @@ public class TaskOccurrenceLocalDataSource {
         db.close();
     }
 */
+
+
+
+
+
     private TaskOccurrence cursorToTaskOccurrence(Cursor c) {
         TaskOccurrence occurrence = new TaskOccurrence();
         occurrence.setId(c.getString(c.getColumnIndexOrThrow("id")));

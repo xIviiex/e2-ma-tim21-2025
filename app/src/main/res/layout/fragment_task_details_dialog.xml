@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    tools:context=".presentation.fragment.TaskDetailsDialogFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:textStyle="bold"
+            android:textSize="15sp"
+             />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textViewTaskName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:textSize="24sp"
+                android:layout_marginBottom="16dp"
+                android:layout_marginTop="36dp"
+                android:gravity="center"
+                tools:text="Task Name" />
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Description:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Date:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Type:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Category:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Difficulty:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewDifficulty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Priority:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewPriority"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="XP:"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/textViewXP"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/buttonClose"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Close" />
+
+        </LinearLayout>
+    </RelativeLayout>
+</ScrollView>

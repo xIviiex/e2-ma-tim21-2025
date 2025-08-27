@@ -17,6 +17,7 @@ import android.widget.Toast;
 import com.google.firebase.auth.FirebaseAuth;
 import com.team21.questify.R;
 import com.team21.questify.application.model.TaskCategory;
+import com.team21.questify.application.service.TaskCategoryService;
 import com.team21.questify.data.repository.TaskCategoryRepository;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class TaskCategoryFragment extends Fragment {
     private static final String TAG = "TaskCategoryFragment";
 
     private Spinner categorySpinner;
-    private TaskCategoryRepository categoryRepository;
+    private TaskCategoryService categoryService;
     private FirebaseAuth firebaseAuth;
     private CategorySelectedListener categorySelectedListener;
 
@@ -52,7 +53,7 @@ public class TaskCategoryFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Inicijalizacija repozitorijuma i Firebase Autentifikacije
-        categoryRepository = new TaskCategoryRepository(requireContext());
+        categoryService = new TaskCategoryService(requireContext());
         firebaseAuth = FirebaseAuth.getInstance();
     }
 
@@ -75,7 +76,7 @@ public class TaskCategoryFragment extends Fragment {
             return;
         }
 
-        categoryRepository.getAllCategoriesForUser(userId, task -> {
+        categoryService.getAllCategoriesForUser(task -> {
             if (task.isSuccessful()) {
                 List<TaskCategory> categories = task.getResult();
                 if (categories != null && !categories.isEmpty()) {

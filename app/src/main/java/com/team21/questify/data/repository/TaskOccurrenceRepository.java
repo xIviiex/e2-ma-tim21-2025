@@ -4,9 +4,14 @@ import android.content.Context;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.team21.questify.application.model.TaskOccurrence;
 import com.team21.questify.data.database.TaskOccurrenceLocalDataSource;
 import com.team21.questify.data.firebase.TaskOccurrenceRemoteDataSource;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TaskOccurrenceRepository {
     private final TaskOccurrenceLocalDataSource localDataSource;
@@ -33,27 +38,28 @@ public class TaskOccurrenceRepository {
         });
     }
 
-   /*
+
     public void getAllOccurrencesForUser(String userId, OnCompleteListener<List<TaskOccurrence>> listener) {
         List<TaskOccurrence> localOccurrences = localDataSource.getAllOccurrencesForUser(userId);
-        if (!localOccurrences.isEmpty()) {
-            listener.onComplete(Tasks.forResult(localOccurrences));
-        }
 
         remoteDataSource.getAllOccurrencesForUser(userId, taskRemote -> {
-            if (taskRemote.isSuccessful()) {
+            if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
                 List<TaskOccurrence> remoteOccurrences = new ArrayList<>();
                 for (QueryDocumentSnapshot document : taskRemote.getResult()) {
                     TaskOccurrence occurrence = document.toObject(TaskOccurrence.class);
                     remoteOccurrences.add(occurrence);
-                    localDataSource.insertOccurrence(occurrence); // Sinhronizacija u lokalnu bazu
+                    localDataSource.insertTaskOccurrence(occurrence);
                 }
                 listener.onComplete(Tasks.forResult(remoteOccurrences));
             } else {
-                if (localOccurrences.isEmpty()) {
+                // Ako Firestore nije uspeo, koristi lokalne ako ih ima
+                if (!localOccurrences.isEmpty()) {
+                    listener.onComplete(Tasks.forResult(localOccurrences));
+                } else {
                     listener.onComplete(Tasks.forException(taskRemote.getException()));
                 }
             }
         });
-    }*/
+    }
+
 }
