@@ -26,16 +26,18 @@ import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
 import com.team21.questify.utils.LevelCalculator;
 
+import java.util.List;
 import java.util.Objects;
 
 public class ProfileActivity extends AppCompatActivity {
 
     private ImageView ivAvatar, ivQrCode, ivAvatarBorder;
     private TextView tvUsername, tvLevel, tvTitle, tvPowerPoints, tvXpDetails, tvCoins;
-    private Button btnChangePassword;
+    private Button btnChangePassword, btnAddFriend;
     private ProgressBar pbXpProgress;
     private boolean isMyProfile;
-
+    private String profileUserId;
+    private String currentUserId;
     private UserService userService;
     private SharedPrefs sharedPreferences;
 
@@ -50,8 +52,8 @@ public class ProfileActivity extends AppCompatActivity {
         userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
 
-        String currentUserId = sharedPreferences.getUserUid();
-        String profileUserId = getIntent().getStringExtra("user_id");
+        currentUserId = sharedPreferences.getUserUid();
+        profileUserId = getIntent().getStringExtra("user_id");
         if (profileUserId == null || profileUserId.isEmpty()) {
             profileUserId = currentUserId;
         }
@@ -66,6 +68,7 @@ public class ProfileActivity extends AppCompatActivity {
         ivAvatar = findViewById(R.id.iv_profile_avatar);
         ivQrCode = findViewById(R.id.iv_qr_code_icon);
         ivAvatarBorder = findViewById(R.id.iv_avatar_border);
+        btnAddFriend = findViewById(R.id.btn_add_friend);
         tvUsername = findViewById(R.id.tv_profile_username);
         tvLevel = findViewById(R.id.tv_profile_level);
         tvTitle = findViewById(R.id.tv_profile_title);
@@ -77,6 +80,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         ivQrCode.setOnClickListener(v -> showQrCodeDialog());
+        btnAddFriend.setOnClickListener(v -> addFriend());
     }
 
     private void setupToolbar() {
@@ -95,6 +99,14 @@ public class ProfileActivity extends AppCompatActivity {
         tvCoins.setVisibility(myProfileVisibility);
         btnChangePassword.setVisibility(myProfileVisibility);
 
+        List<String> friendsIds = userService.getUserById(sharedPreferences.getUserUid()).getFriendsIds();
+        boolean isFriend = friendsIds != null && friendsIds.contains(currentUserId);
+        if (isMyProfile || isFriend) {
+            btnAddFriend.setVisibility(View.GONE);
+        } else {
+            btnAddFriend.setVisibility(View.VISIBLE);
+        }
+
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(isMyProfile ? R.string.my_profile : R.string.user_profile);
         }
@@ -110,11 +122,15 @@ public class ProfileActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem logoutItem = menu.findItem(R.id.action_logout);
         MenuItem statsItem = menu.findItem(R.id.action_statistics);
+        MenuItem friendsItem = menu.findItem(R.id.action_friends);
         if (logoutItem != null) {
             logoutItem.setVisible(isMyProfile);
         }
         if (statsItem != null) {
             statsItem.setVisible(isMyProfile);
+        }
+        if (friendsItem != null) {
+            friendsItem.setVisible(isMyProfile);
         }
         return super.onPrepareOptionsMenu(menu);
     }
@@ -138,7 +154,45 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(intent);
             return true;
         }
+        if (item.getItemId() == R.id.action_friends) {
+            Intent intent = new Intent(this, FriendsActivity.class);
+            startActivity(intent);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void addFriend() {
+        userService.fetchUserProfile(profileUserId, userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                Toast.makeText(this, "Failed to fetch user data.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            User user = userTask.getResult();
+            String profileUsername = user.getUsername();
+
+            userService.addFriend(currentUserId, profileUserId, addFriendTask -> {
+                if (addFriendTask.isSuccessful()) {
+                    userService.addFriend(profileUserId, currentUserId, reverseAddTask -> {
+                        if (reverseAddTask.isSuccessful()) {
+                            Toast.makeText(this, "You and " + profileUsername + " are now friends!", Toast.LENGTH_SHORT).show();
+                            btnAddFriend.setVisibility(View.GONE);
+                        } else {
+                            Toast.makeText(this, "Failed to complete friendship.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    String errorMessage = addFriendTask.getException() != null ? addFriendTask.getException().getMessage() : "Unknown error.";
+
+                    if (errorMessage.contains("already a friend")) {
+                        Toast.makeText(this, "User is already a friend.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Failed to add friend: " + errorMessage, Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        });
     }
 
     private void loadUserProfile(String userId) {
@@ -158,12 +212,20 @@ public class ProfileActivity extends AppCompatActivity {
 
                 setAvatarBorder(user.getTitle());
 
-
                 int resId = getResources().getIdentifier(user.getAvatarName(), "drawable", getPackageName());
                 if (resId != 0) {
                     ivAvatar.setImageResource(resId);
                 } else {
                     ivAvatar.setImageResource(R.drawable.default_avatar);
+                }
+
+                if (!isMyProfile) {
+                    List<String> friendsIds = userService.getUserById(sharedPreferences.getUserUid()).getFriendsIds();
+                    if (friendsIds != null && friendsIds.contains(user.getUserId())) {
+                        btnAddFriend.setVisibility(View.GONE);
+                    } else {
+                        btnAddFriend.setVisibility(View.VISIBLE);
+                    }
                 }
             } else {
                 Toast.makeText(this, "Failed to load user profile.", Toast.LENGTH_SHORT).show();
@@ -231,12 +293,6 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
     private void showQrCodeDialog() {
-        String userId = sharedPreferences.getUserUid();
-        if (userId == null) {
-            Toast.makeText(this, "User ID not available.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             LayoutInflater inflater = this.getLayoutInflater();
@@ -246,7 +302,7 @@ public class ProfileActivity extends AppCompatActivity {
             ImageView ivQrCodeDisplay = dialogView.findViewById(R.id.iv_qr_code_display);
 
             BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
-            Bitmap bitmap = barcodeEncoder.encodeBitmap(userId, BarcodeFormat.QR_CODE, 400, 400);
+            Bitmap bitmap = barcodeEncoder.encodeBitmap(profileUserId, BarcodeFormat.QR_CODE, 400, 400);
 
             ivQrCodeDisplay.setImageBitmap(bitmap);
 

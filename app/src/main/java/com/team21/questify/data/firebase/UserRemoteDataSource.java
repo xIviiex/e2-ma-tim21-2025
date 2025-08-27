@@ -9,6 +9,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.User;
 
+import java.util.List;
+
 public class UserRemoteDataSource {
     private final FirebaseAuth auth;
     private final FirebaseFirestore db;
@@ -65,4 +67,19 @@ public class UserRemoteDataSource {
     public void fetchAllUsers(OnCompleteListener<QuerySnapshot> listener) {
         db.collection("users").get().addOnCompleteListener(listener);
     }
+
+    public void searchUsersByUsername(String usernamePattern, OnCompleteListener<QuerySnapshot> listener) {
+        db.collection("users")
+                .whereGreaterThanOrEqualTo("username", usernamePattern)
+                .whereLessThanOrEqualTo("username", usernamePattern + "\uf8ff")
+                .get()
+                .addOnCompleteListener(listener);
+    }
+
+    public void updateFriendsList(String userId, List<String> friendsIds, OnCompleteListener<Void> listener) {
+        db.collection("users").document(userId)
+                .update("friendsIds", friendsIds)
+                .addOnCompleteListener(listener);
+    }
+
 }

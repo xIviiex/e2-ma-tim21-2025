@@ -139,4 +139,51 @@ public class UserRepository {
         remoteDataSource.saveUserToFirestore(user);
     }
 
+    public void searchUsers(String usernamePattern, OnCompleteListener<List<User>> listener) {
+        List<User> localUsers = localDataSource.searchUsersByUsername(usernamePattern);
+        if (!localUsers.isEmpty()) {
+            listener.onComplete(Tasks.forResult(localUsers));
+        }
+
+        remoteDataSource.searchUsersByUsername(usernamePattern, task -> {
+            if (task.isSuccessful()) {
+                List<User> remoteUsers = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    User user = document.toObject(User.class);
+                    remoteUsers.add(user);
+                    localDataSource.insertUser(user);
+                }
+                listener.onComplete(Tasks.forResult(remoteUsers));
+            } else {
+                if (localUsers.isEmpty()) {
+                    listener.onComplete(Tasks.forException(task.getException()));
+                }
+            }
+        });
+    }
+
+    public void addFriend(String currentUserId, String friendIdToAdd, OnCompleteListener<Void> listener) {
+        getUserById(currentUserId, task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User currentUser = task.getResult();
+                List<String> friends = new ArrayList<>(currentUser.getFriendsIds());
+
+                if (!friends.contains(friendIdToAdd)) {
+                    friends.add(friendIdToAdd);
+                    currentUser.setFriendsIds(friends);
+
+                    remoteDataSource.updateFriendsList(currentUserId, friends, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            localDataSource.updateUser(currentUser);
+                        }
+                        listener.onComplete(updateTask);
+                    });
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("User is already a friend.")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(new Exception("Failed to fetch user data.")));
+            }
+        });
+    }
 }

@@ -3,6 +3,15 @@ package com.team21.questify.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.team21.questify.application.model.User;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class SharedPrefs {
     private static final String PREF_NAME = "QuestifyPrefs";
     private static final String KEY_USER_UID = "user_uid";
@@ -10,6 +19,8 @@ public class SharedPrefs {
     private static final String KEY_USER_USERNAME = "user_username";
     private static final String KEY_USERNAME_LOCKED = "username_locked";
     private static final String KEY_AVATAR_LOCKED = "avatar_locked";
+
+    private static final String KEY_FRIENDS_IDS = "friendsIds";
 
     private final SharedPreferences prefs;
 
@@ -22,6 +33,18 @@ public class SharedPrefs {
         editor.putString(KEY_USER_UID, uid);
         editor.putString(KEY_USER_EMAIL, email);
         editor.putString(KEY_USER_USERNAME, username);
+        editor.apply();
+    }
+
+    public void saveUserProfile(User user) {
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(KEY_USER_UID, user.getUserId());
+        editor.putString(KEY_USER_EMAIL, user.getEmail());
+        editor.putString(KEY_USER_USERNAME, user.getUsername());
+
+        String friendsIdsString = android.text.TextUtils.join(",", user.getFriendsIds());
+        editor.putString(KEY_FRIENDS_IDS, friendsIdsString);
+
         editor.apply();
     }
 

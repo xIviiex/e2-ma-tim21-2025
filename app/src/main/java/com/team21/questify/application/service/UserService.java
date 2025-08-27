@@ -3,6 +3,7 @@ package com.team21.questify.application.service;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.android.gms.tasks.Tasks;
 import com.team21.questify.utils.LevelCalculator;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.AuthCredential;
@@ -14,6 +15,7 @@ import com.team21.questify.application.model.User;
 import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserService {
@@ -233,6 +235,23 @@ public class UserService {
 
     public void updateUser(User user) {
         userRepository.updateUser(user);
+    }
+
+    public void searchUsers(String query, OnCompleteListener<List<User>> listener) {
+        if (query == null || query.trim().isEmpty()) {
+            listener.onComplete(Tasks.forResult(new ArrayList<>()));
+            return;
+        }
+        userRepository.searchUsers(query, listener);
+    }
+
+    public void addFriend(String currentUserId, String userIdToAdd, OnCompleteListener<Void> listener) {
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            listener.onComplete(Tasks.forException(new Exception("User not logged in.")));
+            return;
+        }
+
+        userRepository.addFriend(currentUserId, userIdToAdd, listener);
     }
 
 }

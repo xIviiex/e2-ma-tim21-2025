@@ -1,5 +1,8 @@
 package com.team21.questify.application.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class User {
     private String userId;
     private String username;
@@ -14,6 +17,7 @@ public class User {
     private int coins = 0;
     private Long lastActiveDate;
     private int consecutiveActiveDays = 0;
+    private List<String> friendsIds = new ArrayList<>();
 
     public User() {}
 
@@ -56,7 +60,7 @@ public class User {
     public int getXp() { return xp; }
     public void setXp(int xp) { this.xp = xp; }
     public boolean isActivated() { return isActivated; }
-    public void setIsActivated(boolean isActivated) { this.isActivated = isActivated; }
+    public void setActivated(boolean isActivated) { this.isActivated = isActivated; }
     public Long getCreatedAt() { return createdAt; }
     public void setCreatedAt(Long createdAt) { this.createdAt = createdAt; }
     public String getTitle() { return title; }
@@ -78,5 +82,13 @@ public class User {
 
     public void setConsecutiveActiveDays(int consecutiveActiveDays) {
         this.consecutiveActiveDays = consecutiveActiveDays;
+    }
+
+    public List<String> getFriendsIds() {
+        return friendsIds;
+    }
+
+    public void setFriendsIds(List<String> friendsIds) {
+        this.friendsIds = friendsIds;
     }
 }

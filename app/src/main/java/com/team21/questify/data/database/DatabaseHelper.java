@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 4;
+    public static final int DB_VERSION = 5;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
     public static final String T_TASKS = "tasks";
@@ -31,7 +31,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "title TEXT DEFAULT 'Adventurer'," +
                 "coins INTEGER DEFAULT 0," +
                 "last_active_date INTEGER," +
-                "consecutive_active_days INTEGER DEFAULT 0" +
+                "consecutive_active_days INTEGER DEFAULT 0," +
+                "friends_ids TEXT" +
                 ")");
 
         db.execSQL("CREATE TABLE " + T_TASK_CATEGORIES + " (" +
@@ -127,6 +128,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 4) {
             db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN last_active_date INTEGER");
             db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN consecutive_active_days INTEGER DEFAULT 0");
+        }
+        if (oldVersion < 5) {
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN friends_ids TEXT");
         }
     }
 
