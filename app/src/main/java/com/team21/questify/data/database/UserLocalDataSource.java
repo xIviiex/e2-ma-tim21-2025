@@ -4,11 +4,13 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.text.TextUtils;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.team21.questify.application.model.User;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class UserLocalDataSource {
@@ -33,7 +35,8 @@ public class UserLocalDataSource {
         cv.put("coins", u.getCoins());
         cv.put("last_active_date", u.getLastActiveDate());
         cv.put("consecutive_active_days", u.getConsecutiveActiveDays());
-        db.insert(DatabaseHelper.T_USERS, null, cv);
+        cv.put("friends_ids", TextUtils.join(",", u.getFriendsIds()));
+        db.insertWithOnConflict(DatabaseHelper.T_USERS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
         db.close();
     }
 
@@ -66,7 +69,7 @@ public class UserLocalDataSource {
         u.setEmail(c.getString(c.getColumnIndexOrThrow("email")));
         u.setUsername(c.getString(c.getColumnIndexOrThrow("username")));
         u.setAvatarName(c.getString(c.getColumnIndexOrThrow("avatar_name")));
-        u.setIsActivated(c.getInt(c.getColumnIndexOrThrow("is_activated")) == 1);
+        u.setActivated(c.getInt(c.getColumnIndexOrThrow("is_activated")) == 1);
         u.setCreatedAt(c.getLong(c.getColumnIndexOrThrow("created_at")));
         u.setXp(c.getInt(c.getColumnIndexOrThrow("xp")));
         u.setLevel(c.getInt(c.getColumnIndexOrThrow("level")));
@@ -75,6 +78,12 @@ public class UserLocalDataSource {
         u.setCoins(c.getInt(c.getColumnIndexOrThrow("coins")));
         u.setLastActiveDate(c.getLong(c.getColumnIndexOrThrow("last_active_date")));
         u.setConsecutiveActiveDays(c.getInt(c.getColumnIndexOrThrow("consecutive_active_days")));
+        String friendsIdsString = c.getString(c.getColumnIndexOrThrow("friends_ids"));
+        if (friendsIdsString != null && !friendsIdsString.isEmpty()) {
+            u.setFriendsIds(Arrays.asList(friendsIdsString.split(",")));
+        } else {
+            u.setFriendsIds(new ArrayList<>());
+        }
 
         return u;
     }
@@ -131,7 +140,26 @@ public class UserLocalDataSource {
         cv.put("coins", u.getCoins());
         cv.put("last_active_date", u.getLastActiveDate());
         cv.put("consecutive_active_days", u.getConsecutiveActiveDays());
+        cv.put("friends_ids", TextUtils.join(",", u.getFriendsIds()));
         db.update(DatabaseHelper.T_USERS, cv, "id = ?", new String[]{u.getUserId()});
         db.close();
+    }
+
+    public List<User> searchUsersByUsername(String usernamePattern) {
+        List<User> userList = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        Cursor c = db.query(DatabaseHelper.T_USERS, null,
+                "username LIKE ?", new String[]{"%" + usernamePattern + "%"},
+                null, null, "username ASC");
+
+        if (c != null && c.moveToFirst()) {
+            do {
+                userList.add(cursorToUser(c));
+            } while (c.moveToNext());
+            c.close();
+        }
+        db.close();
+        return userList;
     }
 }

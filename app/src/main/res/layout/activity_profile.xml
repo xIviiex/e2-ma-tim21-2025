@@ -89,6 +89,23 @@
             android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
 
+    <Button
+        android:id="@+id/btn_add_friend"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/add_friend_button"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ll_username_container" />
+
     <TextView
         android:id="@+id/tv_profile_level"
         android:layout_width="wrap_content"
@@ -96,7 +113,7 @@
         android:layout_marginTop="8dp"
         android:textSize="18sp"
         tools:text="Level: 1"
-        app:layout_constraintTop_toBottomOf="@id/ll_username_container"
+        app:layout_constraintTop_toBottomOf="@id/btn_add_friend"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 

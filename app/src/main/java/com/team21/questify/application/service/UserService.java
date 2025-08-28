@@ -3,6 +3,8 @@ package com.team21.questify.application.service;
 import android.content.Context;
 import android.util.Log;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.team21.questify.utils.LevelCalculator;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.AuthCredential;
@@ -14,6 +16,7 @@ import com.team21.questify.application.model.User;
 import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserService {
@@ -233,6 +236,38 @@ public class UserService {
 
     public void updateUser(User user) {
         userRepository.updateUser(user);
+    }
+
+    public void searchUsers(String query, OnCompleteListener<List<User>> listener) {
+        if (query == null || query.trim().isEmpty()) {
+            listener.onComplete(Tasks.forResult(new ArrayList<>()));
+            return;
+        }
+        userRepository.searchUsers(query, listener);
+    }
+
+    public Task<String> addFriendship(String currentUserId, String friendIdToAdd) {
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            return Tasks.forException(new Exception("User not logged in."));
+        }
+
+        Task<Void> addCurrentToFriend = userRepository.addFriend(currentUserId, friendIdToAdd);
+        Task<Void> addFriendToCurrent = userRepository.addFriend(friendIdToAdd, currentUserId);
+
+        return Tasks.whenAll(addCurrentToFriend, addFriendToCurrent)
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+                        return userRepository.getUserById(friendIdToAdd)
+                                .continueWith(userTask -> {
+                                    if (userTask.isSuccessful() && userTask.getResult() != null) {
+                                        return userTask.getResult().getUsername();
+                                    }
+                                    throw userTask.getException();
+                                });
+                    } else {
+                        throw task.getException();
+                    }
+                });
     }
 
 }

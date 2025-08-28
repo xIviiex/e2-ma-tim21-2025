@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -111,6 +112,24 @@ public class UserRepository {
         });
     }
 
+    public Task<User> getUserById(String userId) {
+        User localUser = localDataSource.getUserById(userId);
+        if (localUser != null) {
+            return Tasks.forResult(localUser);
+        }
+        return remoteDataSource.fetchUserFromFirestore(userId).continueWith(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User remoteUser = task.getResult().toObject(User.class);
+                if (remoteUser != null) {
+                    localDataSource.insertUser(remoteUser);
+                }
+                return remoteUser;
+            } else {
+                throw task.getException();
+            }
+        });
+    }
+
     public void getAllUsers(OnCompleteListener<List<User>> onCompleteListener) {
         List<User> localUsers = localDataSource.getAllUsers();
         if (!localUsers.isEmpty()) {
@@ -139,4 +158,41 @@ public class UserRepository {
         remoteDataSource.saveUserToFirestore(user);
     }
 
+    public void searchUsers(String usernamePattern, OnCompleteListener<List<User>> listener) {
+        List<User> localUsers = localDataSource.searchUsersByUsername(usernamePattern);
+        if (!localUsers.isEmpty()) {
+            listener.onComplete(Tasks.forResult(localUsers));
+        }
+
+        remoteDataSource.searchUsersByUsername(usernamePattern, task -> {
+            if (task.isSuccessful()) {
+                List<User> remoteUsers = new ArrayList<>();
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    User user = document.toObject(User.class);
+                    remoteUsers.add(user);
+                    localDataSource.insertUser(user);
+                }
+                listener.onComplete(Tasks.forResult(remoteUsers));
+            } else {
+                if (localUsers.isEmpty()) {
+                    listener.onComplete(Tasks.forException(task.getException()));
+                }
+            }
+        });
+    }
+
+    public Task<Void> addFriend(String currentUserId, String friendIdToAdd) {
+        return remoteDataSource.addFriend(currentUserId, friendIdToAdd)
+                .addOnSuccessListener(aVoid -> {
+                    User localUser = localDataSource.getUserById(currentUserId);
+                    if (localUser != null) {
+                        List<String> friends = new ArrayList<>(localUser.getFriendsIds());
+                        if (!friends.contains(friendIdToAdd)) {
+                            friends.add(friendIdToAdd);
+                            localUser.setFriendsIds(friends);
+                            localDataSource.updateUser(localUser);
+                        }
+                    }
+                });
+    }
 }

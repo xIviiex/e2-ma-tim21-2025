@@ -7,6 +7,11 @@
         android:title="@string/statistics"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/action_friends"
+        android:icon="@drawable/ic_friends"
+        android:title="@string/friends_and_allies"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_logout"
         android:icon="@drawable/ic_logout"
         android:title="@string/logout"

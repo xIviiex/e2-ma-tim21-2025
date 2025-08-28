@@ -1,6 +1,8 @@
 package com.team21.questify.data.firebase;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -8,6 +10,9 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.User;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class UserRemoteDataSource {
     private final FirebaseAuth auth;
@@ -28,6 +33,10 @@ public class UserRemoteDataSource {
 
     public void fetchUserFromFirestore(String userId, OnCompleteListener<DocumentSnapshot> listener) {
         db.collection("users").document(userId).get().addOnCompleteListener(listener);
+    }
+
+    public Task<DocumentSnapshot> fetchUserFromFirestore(String userId) {
+        return db.collection("users").document(userId).get();
     }
 
     public void sendVerificationEmail() {
@@ -65,4 +74,36 @@ public class UserRemoteDataSource {
     public void fetchAllUsers(OnCompleteListener<QuerySnapshot> listener) {
         db.collection("users").get().addOnCompleteListener(listener);
     }
+
+    public void searchUsersByUsername(String usernamePattern, OnCompleteListener<QuerySnapshot> listener) {
+        db.collection("users")
+                .whereGreaterThanOrEqualTo("username", usernamePattern)
+                .whereLessThanOrEqualTo("username", usernamePattern + "\uf8ff")
+                .get()
+                .addOnCompleteListener(listener);
+    }
+
+    public Task<Void> addFriend(String currentUserId, String friendIdToAdd) {
+        return db.collection("users").document(currentUserId).get()
+                .continueWithTask(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        User user = task.getResult().toObject(User.class);
+                        if (user != null) {
+                            List<String> friendsIds = user.getFriendsIds();
+                            if (friendsIds == null) {
+                                friendsIds = new ArrayList<>();
+                            }
+                            if (!friendsIds.contains(friendIdToAdd)) {
+                                friendsIds.add(friendIdToAdd);
+                                return db.collection("users").document(currentUserId)
+                                        .update("friendsIds", friendsIds);
+                            } else {
+                                return Tasks.forException(new Exception("User is already a friend."));
+                            }
+                        }
+                    }
+                    return Tasks.forException(task.getException());
+                });
+    }
+
 }
