@@ -180,6 +180,11 @@ public class FriendsActivity extends AppCompatActivity implements UsersAdapter.O
     }
 
     @Override
+    public void onRemoveFriendClick(User user) {
+        performRemoveFriend(user.getUserId());
+    }
+
+    @Override
     public void onUserClick(User user) {
         Intent intent = new Intent(this, ProfileActivity.class);
         intent.putExtra("user_id", user.getUserId());
@@ -253,5 +258,16 @@ public class FriendsActivity extends AppCompatActivity implements UsersAdapter.O
             userAdapter.setFriendsIds(currentFriends);
             userAdapter.notifyDataSetChanged();
         }
+    }
+
+    private void performRemoveFriend(String friendUserId) {
+        userService.removeFriendship(currentUserId, friendUserId)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Friend successfully removed.", Toast.LENGTH_SHORT).show();
+                    loadFriendsList();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to remove friend.", Toast.LENGTH_SHORT).show();
+                });
     }
 }

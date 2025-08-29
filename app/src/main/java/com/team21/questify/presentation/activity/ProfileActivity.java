@@ -80,7 +80,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         ivQrCode.setOnClickListener(v -> showQrCodeDialog());
-        btnAddFriend.setOnClickListener(v -> addFriend());
+        btnAddFriend.setOnClickListener(v -> addRemoveFriend());
     }
 
     private void setupToolbar() {
@@ -102,21 +102,10 @@ public class ProfileActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(isMyProfile ? R.string.my_profile : R.string.user_profile);
         }
 
-        if (!isMyProfile) {
-            userService.fetchUserProfile(currentUserId, userTask -> {
-                if (userTask.isSuccessful() && userTask.getResult() != null) {
-                    List<String> friendsIds = userTask.getResult().getFriendsIds();
-                    if (friendsIds != null && friendsIds.contains(profileUserId)) {
-                        btnAddFriend.setVisibility(View.GONE);
-                    } else {
-                        btnAddFriend.setVisibility(View.VISIBLE);
-                    }
-                } else {
-                    btnAddFriend.setVisibility(View.VISIBLE);
-                }
-            });
-        } else {
+        if (isMyProfile) {
             btnAddFriend.setVisibility(View.GONE);
+        } else {
+            btnAddFriend.setVisibility(View.VISIBLE);
         }
     }
 
@@ -170,7 +159,7 @@ public class ProfileActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void addFriend() {
+    private void addRemoveFriend() {
         if (isMyProfile) {
             Toast.makeText(this, "You can't add yourself as a friend.", Toast.LENGTH_SHORT).show();
             return;
@@ -178,22 +167,35 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnAddFriend.setEnabled(false);
 
-        userService.addFriendship(currentUserId, profileUserId)
-                .addOnSuccessListener(username -> {
-                    Toast.makeText(this, "You and " + username + " are now friends!", Toast.LENGTH_SHORT).show();
-                    btnAddFriend.setVisibility(View.GONE);
-                    btnAddFriend.setEnabled(true);
-                })
-                .addOnFailureListener(e -> {
-                    btnAddFriend.setEnabled(true);
-                    String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error.";
-                    if (errorMessage.contains("already a friend")) {
-                        Toast.makeText(this, "User is already a friend.", Toast.LENGTH_SHORT).show();
-                        btnAddFriend.setVisibility(View.GONE);
-                    } else {
-                        Toast.makeText(this, "Failed to add friend: " + errorMessage, Toast.LENGTH_SHORT).show();
-                    }
-                });
+        if (btnAddFriend.getText().toString().equals(getString(R.string.add_friend_button))) {
+            userService.addFriendship(currentUserId, profileUserId)
+                    .addOnSuccessListener(username -> {
+                        Toast.makeText(this, "You and " + username + " are now friends!", Toast.LENGTH_SHORT).show();
+                        btnAddFriend.setText(R.string.remove_friend_button);
+                        btnAddFriend.setEnabled(true);
+                    })
+                    .addOnFailureListener(e -> {
+                        btnAddFriend.setEnabled(true);
+                        String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error.";
+                        if (errorMessage.contains("already a friend")) {
+                            Toast.makeText(this, "User is already a friend.", Toast.LENGTH_SHORT).show();
+                            btnAddFriend.setText(R.string.remove_friend_button);
+                        } else {
+                            Toast.makeText(this, "Failed to add friend: " + errorMessage, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            userService.removeFriendship(currentUserId, profileUserId)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Friend successfully removed.", Toast.LENGTH_SHORT).show();
+                        btnAddFriend.setText(R.string.add_friend_button);
+                        btnAddFriend.setEnabled(true);
+                    })
+                    .addOnFailureListener(e -> {
+                        btnAddFriend.setEnabled(true);
+                        Toast.makeText(this, "Failed to remove friend.", Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     private void loadUserProfile(String userId) {
@@ -222,10 +224,10 @@ public class ProfileActivity extends AppCompatActivity {
 
                 if (!isMyProfile) {
                     List<String> friendsIds = userService.getUserById(sharedPreferences.getUserUid()).getFriendsIds();
-                    if (friendsIds != null && friendsIds.contains(user.getUserId())) {
-                        btnAddFriend.setVisibility(View.GONE);
+                    if (friendsIds != null && friendsIds.contains(profileUserId)) {
+                        btnAddFriend.setText(R.string.remove_friend_button);
                     } else {
-                        btnAddFriend.setVisibility(View.VISIBLE);
+                        btnAddFriend.setText(R.string.add_friend_button);
                     }
                 }
             } else {
