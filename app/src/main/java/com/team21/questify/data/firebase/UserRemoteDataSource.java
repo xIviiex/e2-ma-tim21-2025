@@ -106,4 +106,22 @@ public class UserRemoteDataSource {
                 });
     }
 
+    public Task<Void> removeFriend(String userId, String friendIdToRemove) {
+        return db.collection("users").document(userId).get()
+                .continueWithTask(task -> {
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        User user = task.getResult().toObject(User.class);
+                        if (user != null) {
+                            List<String> friendsIds = user.getFriendsIds();
+                            if (friendsIds != null) {
+                                friendsIds.remove(friendIdToRemove);
+                                return db.collection("users").document(userId)
+                                        .update("friendsIds", friendsIds);
+                            }
+                        }
+                    }
+                    return Tasks.forException(new Exception("Failed to remove friend."));
+                });
+    }
+
 }

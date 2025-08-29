@@ -36,4 +36,5 @@
     <string name="failed_to_load_friends">Failed to load friends.</string>
     <string name="no_users_found_matching_your_search">No users found matching your search.</string>
     <string name="search_failed">Search failed. Please try again later.</string>
+    <string name="remove_friend_button">Remove</string>
 </resources>

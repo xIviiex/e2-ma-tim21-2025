@@ -195,4 +195,17 @@ public class UserRepository {
                     }
                 });
     }
+
+    public Task<Void> removeFriend(String currentUserId, String friendIdToRemove) {
+        User localUser = localDataSource.getUserById(currentUserId);
+
+        if (localUser != null) {
+            List<String> friends = new ArrayList<>(localUser.getFriendsIds());
+            friends.remove(friendIdToRemove);
+            localUser.setFriendsIds(friends);
+            localDataSource.updateUser(localUser);
+        }
+
+        return remoteDataSource.removeFriend(currentUserId, friendIdToRemove);
+    }
 }

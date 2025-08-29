@@ -270,4 +270,15 @@ public class UserService {
                 });
     }
 
+    public Task<Void> removeFriendship(String currentUserId, String friendIdToRemove) {
+        if (currentUserId == null || currentUserId.isEmpty()) {
+            return Tasks.forException(new Exception("User not logged in."));
+        }
+
+        Task<Void> removeCurrentFromFriend = userRepository.removeFriend(currentUserId, friendIdToRemove);
+        Task<Void> removeFriendFromCurrent = userRepository.removeFriend(friendIdToRemove, currentUserId);
+
+        return Tasks.whenAll(removeCurrentFromFriend, removeFriendFromCurrent);
+    }
+
 }

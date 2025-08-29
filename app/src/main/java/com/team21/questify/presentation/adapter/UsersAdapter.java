@@ -36,6 +36,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
     public interface OnItemClickListener {
         void onAddFriendClick(User user);
         void onUserClick(User user);
+        void onRemoveFriendClick(User user);
     }
 
     public UsersAdapter(List<User> userList, List<String> friendsIds, OnItemClickListener listener, String currentUserId) {
@@ -63,10 +64,15 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
         boolean isFriend = friendsIds.contains(user.getUserId());
         boolean isCurrentUser = user.getUserId().equals(currentUserId);
 
-        if (isCurrentUser || isFriend) {
+        if (isCurrentUser) {
             holder.addFriendButton.setVisibility(View.GONE);
         } else {
             holder.addFriendButton.setVisibility(View.VISIBLE);
+            if (isFriend) {
+                holder.addFriendButton.setText(R.string.remove_friend_button);
+            } else {
+                holder.addFriendButton.setText(R.string.add_friend_button);
+            }
         }
     }
 
@@ -97,10 +103,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
             addFriendButton = itemView.findViewById(R.id.btn_add_friend);
 
             addFriendButton.setOnClickListener(v -> {
-                Log.d("UserViewHolder", "Add friend button clicked for position: " + getAdapterPosition());
                 int position = getAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
-                    listener.onAddFriendClick(usersList.get(position));
+                    if (((Button)v).getText().toString().equals(v.getContext().getString(R.string.add_friend_button))) {
+                        listener.onAddFriendClick(usersList.get(position));
+                    } else {
+                        listener.onRemoveFriendClick(usersList.get(position));
+                    }
                 }
             });
 
