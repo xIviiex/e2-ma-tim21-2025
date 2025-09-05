@@ -21,6 +21,8 @@ import com.team21.questify.utils.SharedPrefs;
 public class LoginActivity extends AppCompatActivity {
 
     private UserService userService;
+    private EditText emailEditText, passwordEditText;
+    private Button loginButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,27 +36,15 @@ public class LoginActivity extends AppCompatActivity {
         if (FirebaseAuth.getInstance().getCurrentUser() != null && sharedPrefs.getUserUid() != null) {
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
             finish();
+            return;
         }
 
-        EditText emailEditText = findViewById(R.id.emailEditText);
-        EditText passwordEditText = findViewById(R.id.passwordEditText);
-        Button loginButton = findViewById(R.id.loginButton);
+        emailEditText = findViewById(R.id.emailEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
+        loginButton = findViewById(R.id.loginButton);
         TextView registerNowTextView = findViewById(R.id.registerNowTextView);
 
-        loginButton.setOnClickListener(v -> {
-            String email = emailEditText.getText().toString();
-            String password = passwordEditText.getText().toString();
-
-            userService.loginUser(email, password, task -> {
-                if (task.isSuccessful()) {
-                    Toast.makeText(LoginActivity.this, "Successful login!", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    finish();
-                } else {
-                    Toast.makeText(LoginActivity.this, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
-        });
+        loginButton.setOnClickListener(v -> handleLogin());
 
         registerNowTextView.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
@@ -66,5 +56,20 @@ public class LoginActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private void handleLogin() {
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
+
+        userService.loginUser(email, password)
+                .addOnSuccessListener(user -> {
+                    Toast.makeText(LoginActivity.this, "Welcome " + user.getUsername() + "!", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(LoginActivity.this, "Login failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 }

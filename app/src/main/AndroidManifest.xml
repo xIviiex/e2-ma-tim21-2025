@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
+            android:name=".presentation.activity.AllianceDecisionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".presentation.activity.AllianceActivity"
+            android:exported="false" />
+        <activity
             android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"
             android:stateNotNeeded="true"
@@ -49,6 +55,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".application.service.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name=".application.service.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.team21.questify.ACTION_ACCEPT_INVITATION" />
+                <action android:name="com.team21.questify.ACTION_DECLINE_INVITATION" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

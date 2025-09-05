@@ -4,12 +4,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -36,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class UserStatisticsActivity extends AppCompatActivity {
     private UserStatisticsService statisticsService;
@@ -52,19 +51,38 @@ public class UserStatisticsActivity extends AppCompatActivity {
         currentUserId = sharedPrefs.getUserUid();
 
         if (currentUserId != null) {
-            displayTaskCountsByStatus();
-            displayActiveDaysStreak();
-            displayWeeklyXp();
-            displayLongestTaskStreak();
-            displayCompletedTasksByCategory();
-            displayAverageDifficultyXp();
+            loadAndDisplayStatistics();
         }
     }
 
+    private void loadAndDisplayStatistics() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                final Map<TaskStatus, Integer> taskCounts = statisticsService.getTaskCountsByStatus(currentUserId);
+                final Map<String, Integer> weeklyXp = statisticsService.getWeeklyXp(currentUserId);
+                final int longestStreak = statisticsService.getLongestStreakOfCompletedTasks(currentUserId);
+                final Map<String, Integer> categoryCounts = statisticsService.getCompletedTaskCountsByCategory(currentUserId);
+                final Map<String, Double> avgDifficulty = statisticsService.getAverageDailyDifficultyXp(currentUserId);
 
-    private void displayTaskCountsByStatus() {
-        Map<TaskStatus, Integer> counts = statisticsService.getTaskCountsByStatus(currentUserId);
+                final int activeDays = com.google.android.gms.tasks.Tasks.await(statisticsService.getConsecutiveActiveDays(currentUserId));
 
+                runOnUiThread(() -> {
+                    displayTaskCountsByStatus(taskCounts);
+                    displayActiveDaysStreak(activeDays);
+                    displayWeeklyXp(weeklyXp);
+                    displayLongestTaskStreak(longestStreak);
+                    displayCompletedTasksByCategory(categoryCounts);
+                    displayAverageDifficultyXp(avgDifficulty);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(UserStatisticsActivity.this, "Failed to load statistics.", Toast.LENGTH_SHORT).show());
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void displayTaskCountsByStatus(Map<TaskStatus, Integer> counts) {
         PieChart pieChart = new PieChart(this);
         List<PieEntry> entries = new ArrayList<>();
         List<Integer> colors = new ArrayList<>();
@@ -84,35 +102,17 @@ public class UserStatisticsActivity extends AppCompatActivity {
         pieChart.setCenterText("Task status");
         pieChart.animateY(1000);
 
-        ((FrameLayout) findViewById(R.id.donutChartContainer)).addView(pieChart);
+        FrameLayout container = findViewById(R.id.donutChartContainer);
+        container.removeAllViews();
+        container.addView(pieChart);
     }
 
-    private int getTaskStatusColor(TaskStatus status) {
-        switch (status) {
-            case ACTIVE:
-                return Color.parseColor("#4285F4");
-            case PAUSED:
-                return Color.parseColor("#FBBC05");
-            case UNCOMPLETED:
-                return Color.parseColor("#DB4437");
-            case COMPLETED:
-                return Color.parseColor("#0F9D58");
-            case CANCELED:
-                return Color.parseColor("#A8A9AD");
-            default:
-                return Color.GRAY;
-        }
-    }
-
-    private void displayActiveDaysStreak() {
-        int streak = statisticsService.getConsecutiveActiveDays(currentUserId);
+    private void displayActiveDaysStreak(int streak) {
         TextView streakTextView = findViewById(R.id.tvActiveDaysStreak);
         streakTextView.setText(String.format("%d days", streak));
     }
 
-    private void displayWeeklyXp() {
-        Map<String, Integer> weeklyXp = statisticsService.getWeeklyXp(currentUserId);
-
+    private void displayWeeklyXp(Map<String, Integer> weeklyXp) {
         LineChart lineChart = new LineChart(this);
         List<Entry> entries = new ArrayList<>();
         List<String> dates = new ArrayList<>(weeklyXp.keySet());
@@ -135,18 +135,17 @@ public class UserStatisticsActivity extends AppCompatActivity {
         lineChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(dates));
         lineChart.getXAxis().setGranularity(1f);
 
-        ((FrameLayout) findViewById(R.id.lineChartContainer)).addView(lineChart);
+        FrameLayout container = findViewById(R.id.lineChartContainer);
+        container.removeAllViews();
+        container.addView(lineChart);
     }
 
-    private void displayLongestTaskStreak() {
-        int streak = statisticsService.getLongestStreakOfCompletedTasks(currentUserId);
+    private void displayLongestTaskStreak(int streak) {
         TextView streakTextView = findViewById(R.id.tvLongestTaskStreak);
         streakTextView.setText(String.format("%d days", streak));
     }
 
-    private void displayCompletedTasksByCategory() {
-        Map<String, Integer> counts = statisticsService.getCompletedTaskCountsByCategory(currentUserId);
-
+    private void displayCompletedTasksByCategory(Map<String, Integer> counts) {
         BarChart barChart = new BarChart(this);
         List<BarEntry> entries = new ArrayList<>();
         List<String> categoryLabels = new ArrayList<>();
@@ -169,12 +168,12 @@ public class UserStatisticsActivity extends AppCompatActivity {
         barChart.getXAxis().setGranularity(1f);
         barChart.getXAxis().setCenterAxisLabels(true);
 
-        ((FrameLayout) findViewById(R.id.barChartContainer)).addView(barChart);
+        FrameLayout container = findViewById(R.id.barChartContainer);
+        container.removeAllViews();
+        container.addView(barChart);
     }
 
-    private void displayAverageDifficultyXp() {
-        Map<String, Double> averageDifficultyXp = statisticsService.getAverageDailyDifficultyXp(currentUserId);
-
+    private void displayAverageDifficultyXp(Map<String, Double> averageDifficultyXp) {
         LineChart lineChart = new LineChart(this);
         List<Entry> entries = new ArrayList<>();
         List<String> dates = new ArrayList<>(averageDifficultyXp.keySet());
@@ -197,6 +196,19 @@ public class UserStatisticsActivity extends AppCompatActivity {
         lineChart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(dates));
         lineChart.getXAxis().setGranularity(1f);
 
-        ((FrameLayout) findViewById(R.id.averageDifficultyChartContainer)).addView(lineChart);
+        FrameLayout container = findViewById(R.id.averageDifficultyChartContainer);
+        container.removeAllViews();
+        container.addView(lineChart);
+    }
+
+    private int getTaskStatusColor(TaskStatus status) {
+        switch (status) {
+            case ACTIVE: return Color.parseColor("#4285F4");
+            case PAUSED: return Color.parseColor("#FBBC05");
+            case UNCOMPLETED: return Color.parseColor("#DB4437");
+            case COMPLETED: return Color.parseColor("#0F9D58");
+            case CANCELED: return Color.parseColor("#A8A9AD");
+            default: return Color.GRAY;
+        }
     }
 }

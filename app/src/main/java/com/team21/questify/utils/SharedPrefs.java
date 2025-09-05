@@ -21,6 +21,7 @@ public class SharedPrefs {
     private static final String KEY_AVATAR_LOCKED = "avatar_locked";
 
     private static final String KEY_FRIENDS_IDS = "friendsIds";
+    private static final String KEY_FCM_TOKEN = "fcm_token";
 
     private final SharedPreferences prefs;
 
@@ -35,19 +36,9 @@ public class SharedPrefs {
         editor.putString(KEY_USER_USERNAME, username);
         editor.apply();
     }
-
-    public void saveUserProfile(User user) {
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(KEY_USER_UID, user.getUserId());
-        editor.putString(KEY_USER_EMAIL, user.getEmail());
-        editor.putString(KEY_USER_USERNAME, user.getUsername());
-
-        String friendsIdsString = android.text.TextUtils.join(",", user.getFriendsIds());
-        editor.putString(KEY_FRIENDS_IDS, friendsIdsString);
-
-        editor.apply();
+    public void saveFCMToken(String token) {
+        prefs.edit().putString(KEY_FCM_TOKEN, token).apply();
     }
-
     public void lockUsername() {
         prefs.edit().putBoolean(KEY_USERNAME_LOCKED, true).apply();
     }

@@ -6,122 +6,111 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import com.team21.questify.application.model.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserRemoteDataSource {
     private final FirebaseAuth auth;
     private final FirebaseFirestore db;
+    private static final String USERS_COLLECTION = "users";
 
     public UserRemoteDataSource() {
         this.auth = FirebaseAuth.getInstance();
         this.db = FirebaseFirestore.getInstance();
     }
 
-    public void createAuthUser(String email, String password, OnCompleteListener<AuthResult> listener) {
-        auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(listener);
+    public Task<AuthResult> createAuthUser(String email, String password) {
+        return auth.createUserWithEmailAndPassword(email, password);
     }
 
-    public void loginAuthUser(String email, String password, OnCompleteListener<AuthResult> listener) {
-        auth.signInWithEmailAndPassword(email, password).addOnCompleteListener(listener);
+    public Task<AuthResult> loginAuthUser(String email, String password) {
+        return auth.signInWithEmailAndPassword(email, password);
     }
 
-    public void fetchUserFromFirestore(String userId, OnCompleteListener<DocumentSnapshot> listener) {
-        db.collection("users").document(userId).get().addOnCompleteListener(listener);
+    public Task<Void> sendVerificationEmail() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user != null) {
+            return user.sendEmailVerification();
+        }
+        return com.google.android.gms.tasks.Tasks.forException(new Exception("User is not authenticated."));
     }
 
     public Task<DocumentSnapshot> fetchUserFromFirestore(String userId) {
-        return db.collection("users").document(userId).get();
+        return db.collection(USERS_COLLECTION).document(userId).get();
     }
 
-    public void sendVerificationEmail() {
-        FirebaseUser user = auth.getCurrentUser();
-        if (user != null) {
-            user.sendEmailVerification();
-        }
+    public Task<Void> saveUserToFirestore(User user) {
+        return db.collection(USERS_COLLECTION).document(user.getUserId()).set(user);
     }
 
-    public void saveUserToFirestore(User user) {
-        if (user.getUserId() != null) {
-            db.collection("users").document(user.getUserId()).set(user);
-        }
+    public Task<Void> updateUser(User user) {
+        return db.collection(USERS_COLLECTION).document(user.getUserId()).set(user, com.google.firebase.firestore.SetOptions.merge());
     }
 
-    public void updateActivatedFlag(String uid, boolean activated, OnCompleteListener<Void> listener) {
-        db.collection("users").document(uid)
-                .update("activated", activated)
-                .addOnCompleteListener(listener);
-
+    public Task<Void> updateActivatedFlag(String uid, boolean activated) {
+        return db.collection(USERS_COLLECTION).document(uid).update("activated", activated);
     }
 
-    public void isUsernameUnique(String username, OnCompleteListener<QuerySnapshot> listener) {
-        db.collection("users")
+    public Task<QuerySnapshot> checkUsernameExists(String username) {
+        return db.collection(USERS_COLLECTION)
                 .whereEqualTo("username", username)
                 .limit(1)
-                .get()
-                .addOnCompleteListener(listener);
+                .get();
     }
 
-    public void deleteUserFromFirestore(String userId, OnCompleteListener<Void> listener) {
-        db.collection("users").document(userId).delete().addOnCompleteListener(listener);
+    public Task<Void> deleteUserFromFirestore(String userId) {
+        return db.collection(USERS_COLLECTION).document(userId).delete();
     }
 
-    public void fetchAllUsers(OnCompleteListener<QuerySnapshot> listener) {
-        db.collection("users").get().addOnCompleteListener(listener);
+    public Task<QuerySnapshot> fetchAllUsers() {
+        return db.collection(USERS_COLLECTION).get();
     }
 
-    public void searchUsersByUsername(String usernamePattern, OnCompleteListener<QuerySnapshot> listener) {
-        db.collection("users")
+    public Task<QuerySnapshot> searchUsersByUsername(String usernamePattern) {
+        return db.collection(USERS_COLLECTION)
                 .whereGreaterThanOrEqualTo("username", usernamePattern)
                 .whereLessThanOrEqualTo("username", usernamePattern + "\uf8ff")
-                .get()
-                .addOnCompleteListener(listener);
+                .get();
     }
 
-    public Task<Void> addFriend(String currentUserId, String friendIdToAdd) {
-        return db.collection("users").document(currentUserId).get()
-                .continueWithTask(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        User user = task.getResult().toObject(User.class);
-                        if (user != null) {
-                            List<String> friendsIds = user.getFriendsIds();
-                            if (friendsIds == null) {
-                                friendsIds = new ArrayList<>();
-                            }
-                            if (!friendsIds.contains(friendIdToAdd)) {
-                                friendsIds.add(friendIdToAdd);
-                                return db.collection("users").document(currentUserId)
-                                        .update("friendsIds", friendsIds);
-                            } else {
-                                return Tasks.forException(new Exception("User is already a friend."));
-                            }
-                        }
-                    }
-                    return Tasks.forException(task.getException());
-                });
+    public Task<Void> createFriendship(String userId1, String userId2) {
+        DocumentReference user1Ref = db.collection(USERS_COLLECTION).document(userId1);
+        DocumentReference user2Ref = db.collection(USERS_COLLECTION).document(userId2);
+
+        WriteBatch batch = db.batch();
+        batch.update(user1Ref, "friendsIds", FieldValue.arrayUnion(userId2));
+        batch.update(user2Ref, "friendsIds", FieldValue.arrayUnion(userId1));
+
+        return batch.commit();
     }
 
-    public Task<Void> removeFriend(String userId, String friendIdToRemove) {
-        return db.collection("users").document(userId).get()
-                .continueWithTask(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        User user = task.getResult().toObject(User.class);
-                        if (user != null) {
-                            List<String> friendsIds = user.getFriendsIds();
-                            if (friendsIds != null) {
-                                friendsIds.remove(friendIdToRemove);
-                                return db.collection("users").document(userId)
-                                        .update("friendsIds", friendsIds);
-                            }
-                        }
-                    }
-                    return Tasks.forException(new Exception("Failed to remove friend."));
-                });
+    public Task<Void> removeFriendship(String userId1, String userId2) {
+        DocumentReference user1Ref = db.collection(USERS_COLLECTION).document(userId1);
+        DocumentReference user2Ref = db.collection(USERS_COLLECTION).document(userId2);
+
+        WriteBatch batch = db.batch();
+        batch.update(user1Ref, "friendsIds", FieldValue.arrayRemove(userId2));
+        batch.update(user2Ref, "friendsIds", FieldValue.arrayRemove(userId1));
+
+        return batch.commit();
+    }
+
+    public Task<Void> updateUserAllianceId(String userId, String allianceId) {
+        return db.collection(USERS_COLLECTION).document(userId).update("currentAllianceId", allianceId);
+    }
+
+    public Task<Void> updateUserFCMToken(String userId, String fcmToken) {
+        return db.collection(USERS_COLLECTION).document(userId).update("fcmToken", fcmToken);
     }
 
 }

@@ -2,13 +2,14 @@ package com.team21.questify.application.service;
 
 import android.content.Context;
 import android.util.Log;
+import android.util.Pair;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.team21.questify.data.firebase.UserRemoteDataSource;
 import com.team21.questify.utils.LevelCalculator;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -16,269 +17,177 @@ import com.team21.questify.application.model.User;
 import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.SharedPrefs;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class UserService {
     private final UserRepository userRepository;
     private final SharedPrefs sharedPreferences;
+    private final FirebaseAuth firebaseAuth;
 
     public UserService(Context ctx) {
         this.userRepository = new UserRepository(ctx);
         this.sharedPreferences = new SharedPrefs(ctx);
+        this.firebaseAuth = FirebaseAuth.getInstance();
     }
 
-    public void loginUser(String email, String password, OnCompleteListener<AuthResult> listener) {
+    public Task<User> loginUser(String email, String password) {
         if (email.isEmpty() || password.isEmpty()) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Please fill all fields")));
-            return;
+            return Tasks.forException(new Exception("Please fill all fields"));
         }
 
-        userRepository.loginUser(email, password, task -> {
-            if (!task.isSuccessful()) {
-                listener.onComplete(task);
-                return;
-            }
+        return userRepository.loginUser(email, password)
+                .continueWithTask(task -> {
+                    if (!task.isSuccessful()) throw task.getException();
 
-            FirebaseUser firebaseUser = task.getResult().getUser();
-            if (firebaseUser == null) {
-                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("User not found.")));
-                return;
-            }
+                    FirebaseUser firebaseUser = task.getResult().getUser();
+                    if (firebaseUser == null) throw new Exception("User not found.");
 
-            firebaseUser.reload().addOnCompleteListener(reloadTask -> {
-                if (!reloadTask.isSuccessful()) {
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to refresh user data.")));
-                    return;
-                }
+                    return firebaseUser.reload().continueWith(reloadTask -> firebaseUser);
+                })
+                .continueWithTask(task -> {
+                    FirebaseUser refreshedUser = task.getResult();
+                    if (!refreshedUser.isEmailVerified()) {
+                        long creationTime = refreshedUser.getMetadata().getCreationTimestamp();
+                        long ageInMillis = System.currentTimeMillis() - creationTime;
 
-                FirebaseUser refreshedUser = FirebaseAuth.getInstance().getCurrentUser();
-                if (refreshedUser == null) {
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("User session expired.")));
-                    return;
-                }
-
-                if (!refreshedUser.isEmailVerified()) {
-                    long creationTimeMillis = refreshedUser.getMetadata().getCreationTimestamp();
-                    long currentTimeMillis = System.currentTimeMillis();
-                    long accountAgeMillis = currentTimeMillis - creationTimeMillis;
-
-                    if (accountAgeMillis > 2 * 60 * 1000) {
-                        userRepository.deleteUser(refreshedUser.getUid(), deleteTask -> {
-                            FirebaseAuth.getInstance().signOut();
-                            if (deleteTask.isSuccessful()) {
-                                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Link has expired, please register again.")));
-                            } else {
-                                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Link has expired, please register again.")));
-                            }
-                        });
-                        return;
-                    } else {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Please activate your account via email.")));
-                        return;
+                        if (ageInMillis > TimeUnit.HOURS.toMillis(24)) {
+                            return userRepository.deleteUser(refreshedUser.getUid())
+                                    .continueWithTask(deleteTask -> {
+                                        firebaseAuth.signOut();
+                                        throw new Exception("Link has expired, please register again.");
+                                    });
+                        } else {
+                            throw new Exception("Please activate your account via email.");
+                        }
                     }
-                }
-
-                userRepository.fetchUserFromFirebase(refreshedUser.getUid(), fetchTask -> {
-                    if (!fetchTask.isSuccessful() || fetchTask.getResult() == null) {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to fetch user data.")));
-                        return;
-                    }
-                    User user = fetchTask.getResult().toObject(User.class);
-                    if (user == null) {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("User data not found.")));
-                        return;
-                    }
+                    return userRepository.getUserById(refreshedUser.getUid());
+                })
+                .onSuccessTask(user -> {
                     sharedPreferences.saveUserSession(user.getUserId(), user.getEmail(), user.getUsername());
-                    userRepository.activateUser(user.getUserId(), true);
-                    listener.onComplete(task);
+                    return updateFcmToken(user);
                 });
-            });
-        });
+    }
+
+    public Task<Void> registerUser(String email, String password, String confirmPassword, String username, String avatarName) {
+        String validationError = validateRegistrationData(email, password, confirmPassword, username, avatarName);
+        if (validationError != null) {
+            return Tasks.forException(new Exception(validationError));
+        }
+
+        long createdAt = System.currentTimeMillis();
+        User newUser = new User("", username, email, avatarName, createdAt);
+
+        return userRepository.registerUser(email, password, newUser)
+                .addOnSuccessListener(aVoid -> {
+                    sharedPreferences.lockUsername();
+                    sharedPreferences.lockAvatar();
+                    firebaseAuth.signOut();
+                });
     }
 
     public void logoutUser() {
-        FirebaseAuth.getInstance().signOut();
+        firebaseAuth.signOut();
         sharedPreferences.clearSession();
     }
 
-    public void registerUser(String email, String password, String confirmPassword, String username, String avatarName, OnCompleteListener<AuthResult> listener) {
-
-        String validationError = validateRegistrationData(email, password, confirmPassword, username, avatarName);
-        if (validationError != null) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception(validationError)));
-            return;
+    public Task<Void> changePassword(String oldPassword, String newPassword, String confirmNewPassword) {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new Exception("No user is currently logged in."));
+        }
+        if (newPassword == null || newPassword.length() < 8) {
+            return Tasks.forException(new Exception("New password must be at least 8 characters long."));
+        }
+        if (!newPassword.equals(confirmNewPassword)) {
+            return Tasks.forException(new Exception("New passwords do not match."));
         }
 
-        userRepository.isUsernameUnique(username, isUniqueTask -> {
-            if (isUniqueTask.isSuccessful()) {
-                if (!isUniqueTask.getResult().isEmpty()) {
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Username already exists.")));
-                    return;
-                }
-
-                long createdAt = System.currentTimeMillis();
-                User newUser = new User(null, username, email, avatarName, 1, 0, false, createdAt);
-
-                userRepository.registerUser(email, password, newUser, task -> {
-                    if (task.isSuccessful() && task.getResult().getUser() != null) {
-                        FirebaseUser firebaseUser = task.getResult().getUser();
-                        Log.d("UserService", "Successful registration for user: " + firebaseUser.getUid());
-
-                        sharedPreferences.lockUsername();
-                        sharedPreferences.lockAvatar();
-
-                        FirebaseAuth.getInstance().signOut();
+        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), oldPassword);
+        return user.reauthenticate(credential)
+                .continueWithTask(reauthTask -> {
+                    if (reauthTask.isSuccessful()) {
+                        return user.updatePassword(newPassword);
+                    } else {
+                        throw new Exception("Incorrect old password.", reauthTask.getException());
                     }
-                    listener.onComplete(task);
                 });
+    }
+
+    public Task<Void> addXpAndCheckLevelUp(String userId, int xpToAdd) {
+        return userRepository.getUserById(userId).continueWithTask(task -> {
+            if (!task.isSuccessful()) throw task.getException();
+
+            User user = task.getResult();
+            int newXp = user.getXp() + xpToAdd;
+            int requiredXp = LevelCalculator.getRequiredXpForNextLevel(user.getLevel());
+
+            if (newXp >= requiredXp) {
+                int newLevel = user.getLevel() + 1;
+                user.setLevel(newLevel);
+                user.setXp(newXp - requiredXp);
+                user.setTitle(LevelCalculator.getTitleForLevel(newLevel));
+                user.setPowerPoints(user.getPowerPoints() + LevelCalculator.getPowerPointsForLevel(newLevel));
+                Log.d("UserService", "User " + user.getUsername() + " leveled up to level " + newLevel);
             } else {
-                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to check username uniqueness.")));
+                user.setXp(newXp);
             }
+            return userRepository.updateUser(user);
+        });
+    }
+
+    public Task<User> fetchUserProfile(String userId) { return userRepository.getUserById(userId); }
+    public Task<Void> updateUser(User user) { return userRepository.updateUser(user); }
+    public Task<List<User>> searchUsers(String query) { return userRepository.searchUsers(query); }
+    public Task<Void> addFriendship(String currentUserId, String friendIdToAdd) { return userRepository.createFriendship(currentUserId, friendIdToAdd); }
+    public Task<Void> removeFriendship(String currentUserId, String friendIdToRemove) { return userRepository.removeFriendship(currentUserId, friendIdToRemove); }
+
+    private Task<User> updateFcmToken(User user) {
+        return FirebaseMessaging.getInstance().getToken().onSuccessTask(token -> {
+            sharedPreferences.saveFCMToken(token);
+            user.setFcmToken(token);
+            return userRepository.updateUser(user).continueWith(task -> user);
         });
     }
 
     private String validateRegistrationData(String email, String password, String confirmPassword, String username, String avatarName) {
-        if (email == null || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            return "Invalid email.";
-        }
-        if (password == null || password.length() < 8) {
-            return "Password has to have at least 8 characters.";
-        }
-        if (!password.equals(confirmPassword)) {
-            return "Passwords are not matching.";
-        }
-        if (username == null || username.trim().isEmpty() || username.length() < 3 || username.length() > 20) {
-            return "Username has to have 3-20 characters.";
-        }
-        if (avatarName == null || avatarName.isEmpty()) {
-            return "Choose avatar.";
-        }
+        if (email == null || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Invalid email.";
+        if (password == null || password.length() < 8) return "Password has to have at least 8 characters.";
+        if (!password.equals(confirmPassword)) return "Passwords are not matching.";
+        if (username == null || username.trim().length() < 3 || username.length() > 20) return "Username has to have 3-20 characters.";
+        if (avatarName == null || avatarName.isEmpty()) return "Choose avatar.";
         return null;
     }
 
-    public void changePassword(String oldPassword, String newPassword, String confirmNewPassword, OnCompleteListener<Void> listener) {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (user == null) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("No user is currently logged in.")));
-            return;
-        }
-
-        if (newPassword == null || newPassword.length() < 8) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("New password must be at least 8 characters long.")));
-            return;
-        }
-
-        if (!newPassword.equals(confirmNewPassword)) {
-            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("New passwords do not match.")));
-            return;
-        }
-
-        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), oldPassword);
-
-        user.reauthenticate(credential).addOnCompleteListener(reauthTask -> {
-            if (reauthTask.isSuccessful()) {
-                user.updatePassword(newPassword).addOnCompleteListener(updateTask -> {
-                    if (updateTask.isSuccessful()) {
-                        listener.onComplete(updateTask);
-                    } else {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to change password. Please try again.")));
-                    }
-                });
-            } else {
-                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Incorrect old password.")));
-            }
-        });
-    }
-
-    public void fetchUserProfile(String userId, OnCompleteListener<User> listener) {
-        userRepository.getUserById(userId, listener);
-    }
-
-    public void fetchAllUsers(OnCompleteListener<List<User>> listener) {
-        userRepository.getAllUsers(listener);
-    }
-
-    public User getUserById(String userId) {
-        return userRepository.getUserFromLocalDb(userId);
-    }
-
-    public void addXpAndCheckLevelUp(String userId, int xpToAdd) {
-        userRepository.getUserById(userId, task -> {
+    public Task<Pair<Boolean, String>> checkUserAllianceStatus(String userId) {
+        return userRepository.getUserById(userId).continueWith(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 User user = task.getResult();
-                int currentXp = user.getXp();
-                int newXp = currentXp + xpToAdd;
-
-                int currentLevel = user.getLevel();
-                int xpForNextLevel = LevelCalculator.getRequiredXpForNextLevel(currentLevel);
-
-                if (newXp >= xpForNextLevel) {
-                    user.setXp(newXp - xpForNextLevel);
-                    user.setLevel(currentLevel + 1);
-                    user.setTitle(LevelCalculator.getTitleForLevel(currentLevel + 1));
-                    user.setPowerPoints(user.getPowerPoints() + LevelCalculator.getPowerPointsForLevel(currentLevel + 1));
-
-                    Log.d("UserService", "User " + user.getUsername() + " leveled up to " + user.getLevel() + " level.");
-
-                    userRepository.updateUser(user);
-
-                } else {
-                    user.setXp(newXp);
-                    userRepository.updateUser(user);
-                }
-            } else {
-                Log.e("UserService", "Unsuccessful getting user for adding XP.");
+                String currentAllianceId = user.getCurrentAllianceId();
+                boolean isInAlliance = currentAllianceId != null && !currentAllianceId.isEmpty();
+                return Pair.create(isInAlliance, currentAllianceId);
             }
+            Log.e("UserService", "Failed to check alliance status", task.getException());
+            return Pair.create(false, null);
         });
     }
 
-    public void updateUser(User user) {
-        userRepository.updateUser(user);
-    }
-
-    public void searchUsers(String query, OnCompleteListener<List<User>> listener) {
-        if (query == null || query.trim().isEmpty()) {
-            listener.onComplete(Tasks.forResult(new ArrayList<>()));
-            return;
-        }
-        userRepository.searchUsers(query, listener);
-    }
-
-    public Task<String> addFriendship(String currentUserId, String friendIdToAdd) {
-        if (currentUserId == null || currentUserId.isEmpty()) {
-            return Tasks.forException(new Exception("User not logged in."));
+    public Task<List<User>> getUsersByIds(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Tasks.forResult(new java.util.ArrayList<>());
         }
 
-        Task<Void> addCurrentToFriend = userRepository.addFriend(currentUserId, friendIdToAdd);
-        Task<Void> addFriendToCurrent = userRepository.addFriend(friendIdToAdd, currentUserId);
-
-        return Tasks.whenAll(addCurrentToFriend, addFriendToCurrent)
-                .continueWithTask(task -> {
-                    if (task.isSuccessful()) {
-                        return userRepository.getUserById(friendIdToAdd)
-                                .continueWith(userTask -> {
-                                    if (userTask.isSuccessful() && userTask.getResult() != null) {
-                                        return userTask.getResult().getUsername();
-                                    }
-                                    throw userTask.getException();
-                                });
-                    } else {
-                        throw task.getException();
-                    }
-                });
-    }
-
-    public Task<Void> removeFriendship(String currentUserId, String friendIdToRemove) {
-        if (currentUserId == null || currentUserId.isEmpty()) {
-            return Tasks.forException(new Exception("User not logged in."));
+        List<Task<User>> tasks = new java.util.ArrayList<>();
+        for (String id : userIds) {
+            tasks.add(userRepository.getUserById(id));
         }
 
-        Task<Void> removeCurrentFromFriend = userRepository.removeFriend(currentUserId, friendIdToRemove);
-        Task<Void> removeFriendFromCurrent = userRepository.removeFriend(friendIdToRemove, currentUserId);
-
-        return Tasks.whenAll(removeCurrentFromFriend, removeFriendFromCurrent);
+        return Tasks.whenAllSuccess(tasks).continueWith(task -> {
+            List<User> userList = new java.util.ArrayList<>();
+            for (Object obj : task.getResult()) {
+                userList.add((User) obj);
+            }
+            return userList;
+        });
     }
-
 }

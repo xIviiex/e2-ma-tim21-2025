@@ -23,6 +23,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        resources.excludes.add("META-INF/INDEX.LIST")
+        resources.excludes.add("META-INF/DEPENDENCIES")
+        resources.excludes.add("META-INF/LICENSE")
+        resources.excludes.add("META-INF/LICENSE.txt")
+        resources.excludes.add("META-INF/license.txt")
+        resources.excludes.add("META-INF/NOTICE")
+        resources.excludes.add("META-INF/NOTICE.txt")
+        resources.excludes.add("META-INF/notice.txt")
+        resources.excludes.add("META-INF/ASL2.0")
+        resources.excludes.add("META-INF/*.kotlin_module")
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
@@ -30,7 +44,6 @@ android {
 }
 
 dependencies {
-
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity
@@ -45,4 +58,11 @@ dependencies {
     implementation libs.material.calendar.view
     implementation libs.mpandroidchart
     implementation libs.gson
+    implementation libs.firebase.messaging
+    implementation libs.volley
+    implementation libs.google.auth.library.oauth2.http
+    implementation libs.grpc.okhttp
+    implementation libs.grpc.protobuf.lite
+    implementation libs.grpc.stub
+    implementation platform(libs.firebase.bom)
 }

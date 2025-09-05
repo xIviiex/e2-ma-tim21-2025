@@ -169,8 +169,8 @@ public class ProfileActivity extends AppCompatActivity {
 
         if (btnAddFriend.getText().toString().equals(getString(R.string.add_friend_button))) {
             userService.addFriendship(currentUserId, profileUserId)
-                    .addOnSuccessListener(username -> {
-                        Toast.makeText(this, "You and " + username + " are now friends!", Toast.LENGTH_SHORT).show();
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Friend added successfully!", Toast.LENGTH_SHORT).show();
                         btnAddFriend.setText(R.string.remove_friend_button);
                         btnAddFriend.setEnabled(true);
                     })
@@ -199,41 +199,46 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void loadUserProfile(String userId) {
-        userService.fetchUserProfile(userId, task -> {
-            if (task.isSuccessful() && task.getResult() != null) {
-                User user = task.getResult();
-                tvUsername.setText(user.getUsername());
-                tvLevel.setText("Level: " + user.getLevel());
-                tvTitle.setText("(" + user.getTitle() + ")");
-                tvPowerPoints.setText("PP: " + user.getPowerPoints());
-                tvCoins.setText("Coins: " + user.getCoins());
+        userService.fetchUserProfile(userId)
+                .addOnSuccessListener(user -> {
+                    tvUsername.setText(user.getUsername());
+                    tvLevel.setText("Level: " + user.getLevel());
+                    tvTitle.setText("(" + user.getTitle() + ")");
+                    tvPowerPoints.setText("PP: " + user.getPowerPoints());
+                    tvCoins.setText("Coins: " + user.getCoins());
 
-                int xpToNextLevel = LevelCalculator.getRequiredXpForNextLevel(user.getLevel());
-                pbXpProgress.setMax(xpToNextLevel);
-                pbXpProgress.setProgress(user.getXp());
-                tvXpDetails.setText(user.getXp() + " / " + xpToNextLevel + " XP");
+                    int xpToNextLevel = LevelCalculator.getRequiredXpForNextLevel(user.getLevel());
+                    pbXpProgress.setMax(xpToNextLevel);
+                    pbXpProgress.setProgress(user.getXp());
+                    tvXpDetails.setText(user.getXp() + " / " + xpToNextLevel + " XP");
 
-                setAvatarBorder(user.getTitle());
+                    setAvatarBorder(user.getTitle());
 
-                int resId = getResources().getIdentifier(user.getAvatarName(), "drawable", getPackageName());
-                if (resId != 0) {
-                    ivAvatar.setImageResource(resId);
-                } else {
-                    ivAvatar.setImageResource(R.drawable.default_avatar);
-                }
+                    int resId = getResources().getIdentifier(user.getAvatarName(), "drawable", getPackageName());
+                    if (resId != 0) {
+                        ivAvatar.setImageResource(resId);
+                    } else {
+                        ivAvatar.setImageResource(R.drawable.default_avatar);
+                    }
 
-                if (!isMyProfile) {
-                    List<String> friendsIds = userService.getUserById(sharedPreferences.getUserUid()).getFriendsIds();
-                    if (friendsIds != null && friendsIds.contains(profileUserId)) {
+                    if (!isMyProfile) {
+                        checkIfFriend(user.getUserId());
+                    }
+                }).addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load user profile.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void checkIfFriend(String profileId) {
+        userService.fetchUserProfile(currentUserId)
+                .addOnSuccessListener(currentUser -> {
+                    List<String> friendsIds = currentUser.getFriendsIds();
+                    if (friendsIds != null && friendsIds.contains(profileId)) {
                         btnAddFriend.setText(R.string.remove_friend_button);
                     } else {
                         btnAddFriend.setText(R.string.add_friend_button);
                     }
-                }
-            } else {
-                Toast.makeText(this, "Failed to load user profile.", Toast.LENGTH_SHORT).show();
-            }
-        });
+                });
     }
 
     private void setAvatarBorder(String title) {
@@ -274,27 +279,35 @@ public class ProfileActivity extends AppCompatActivity {
             String newPassword = Objects.requireNonNull(tilNewPassword.getEditText()).getText().toString().trim();
             String confirmNewPassword = Objects.requireNonNull(tilConfirmNewPassword.getEditText()).getText().toString().trim();
 
-            userService.changePassword(oldPassword, newPassword, confirmNewPassword, task -> {
-                if (task.isSuccessful()) {
-                    Toast.makeText(ProfileActivity.this, "Password changed successfully.", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-                } else {
-                    String errorMessage = task.getException() != null ? task.getException().getMessage() : "Unknown error.";
-                    Toast.makeText(ProfileActivity.this, "Failed to change password: " + errorMessage, Toast.LENGTH_SHORT).show();
+            tilOldPassword.setError(null);
+            tilNewPassword.setError(null);
+            tilConfirmNewPassword.setError(null);
 
-                    if (errorMessage.contains("Incorrect old password")) {
-                        tilOldPassword.setError("Incorrect old password.");
-                    } else if (errorMessage.contains("New password must be at least")) {
-                        tilNewPassword.setError("New password is too short.");
-                    } else if (errorMessage.contains("New passwords do not match")) {
-                        tilConfirmNewPassword.setError("Passwords do not match.");
-                    } else {
-                        Toast.makeText(ProfileActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
+            btnChange.setEnabled(false);
+
+            userService.changePassword(oldPassword, newPassword, confirmNewPassword)
+                    .addOnSuccessListener(aVoid -> {
+                        btnChange.setEnabled(true);
+                        Toast.makeText(ProfileActivity.this, "Password changed successfully.", Toast.LENGTH_SHORT).show();
+                        dialog.dismiss();
+                    })
+                    .addOnFailureListener(e -> {
+                        btnChange.setEnabled(true);
+                        String errorMessage = e.getMessage() != null ? e.getMessage() : "Unknown error.";
+
+                        if (errorMessage.contains("Incorrect old password")) {
+                            tilOldPassword.setError("Incorrect old password.");
+                        } else if (errorMessage.contains("at least 8 characters")) {
+                            tilNewPassword.setError("New password must be at least 8 characters long.");
+                        } else if (errorMessage.contains("do not match")) {
+                            tilConfirmNewPassword.setError("New passwords do not match.");
+                        } else {
+                            Toast.makeText(ProfileActivity.this, "Failed: " + errorMessage, Toast.LENGTH_LONG).show();
+                        }
+                    });
         });
     }
+
     private void showQrCodeDialog() {
         try {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);

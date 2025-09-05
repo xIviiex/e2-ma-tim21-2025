@@ -24,6 +24,7 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
     private final OnItemClickListener listener;
     private String currentUserId;
     private List<String> friendsIds;
+    private boolean showFriendButton = true;
 
     public List<String> getFriendsIds() {
         return friendsIds;
@@ -45,6 +46,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
         this.listener = listener;
         this.currentUserId = currentUserId;
     }
+    public UsersAdapter(List<User> userList, String currentUserId) {
+        this.usersList = userList;
+        this.currentUserId = currentUserId;
+        this.friendsIds = new ArrayList<>();
+        this.listener = null;
+        this.showFriendButton = false;
+    }
 
     @NonNull
     @Override
@@ -57,9 +65,13 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.UserViewHold
 
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
-        Log.d("UsersAdapter", "onBindViewHolder called for position: " + position);
         User user = usersList.get(position);
         holder.bind(user);
+
+        if (!showFriendButton) {
+            holder.addFriendButton.setVisibility(View.GONE);
+            return;
+        }
 
         boolean isFriend = friendsIds.contains(user.getUserId());
         boolean isCurrentUser = user.getUserId().equals(currentUserId);
