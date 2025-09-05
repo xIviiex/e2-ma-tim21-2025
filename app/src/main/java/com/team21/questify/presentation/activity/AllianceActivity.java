@@ -48,7 +48,6 @@ public class AllianceActivity extends AppCompatActivity {
 
         allianceId = getIntent().getStringExtra("allianceId");
         if (allianceId == null || allianceId.isEmpty()) {
-            Toast.makeText(this, "Alliance ID not found.", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -226,11 +225,6 @@ public class AllianceActivity extends AppCompatActivity {
 
     private void leaveAlliance() {
         String currentUserId = sharedPrefs.getUserUid();
-
-        Log.d(TAG, "Attempting to leave alliance...");
-        Log.d(TAG, "Alliance Service is null: " + (allianceService == null));
-        Log.d(TAG, "Alliance ID: " + allianceId);
-        Log.d(TAG, "Current User ID: " + currentUserId);
 
         if (allianceService == null || allianceId == null || currentUserId == null) {
             Toast.makeText(this, "Critical error: Cannot leave alliance. Data is missing.", Toast.LENGTH_LONG).show();
