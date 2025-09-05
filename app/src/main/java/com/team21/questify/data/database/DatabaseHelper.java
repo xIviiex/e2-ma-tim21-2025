@@ -6,11 +6,13 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 5;
+    public static final int DB_VERSION = 6;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
     public static final String T_TASKS = "tasks";
     public static final String T_TASK_OCCURRENCES = "task_occurrences";
+    public static final String T_ALLIANCES = "alliances";
+    public static final String T_INVITATIONS = "invitations";
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -32,7 +34,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "coins INTEGER DEFAULT 0," +
                 "last_active_date INTEGER," +
                 "consecutive_active_days INTEGER DEFAULT 0," +
-                "friends_ids TEXT" +
+                "friends_ids TEXT," +
+                "current_alliance_id TEXT," +
+                "fcm_token TEXT" +
                 ")");
 
         db.execSQL("CREATE TABLE " + T_TASK_CATEGORIES + " (" +
@@ -74,6 +78,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                 ")");
 
+        db.execSQL("CREATE TABLE " + T_ALLIANCES + " (" +
+                "id TEXT PRIMARY KEY, " +
+                "name TEXT NOT NULL, " +
+                "leader_id TEXT NOT NULL, " +
+                "members_ids TEXT," +
+                "current_mission_id TEXT," +
+                "mission_status TEXT NOT NULL," +
+                "FOREIGN KEY(leader_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
+
+        db.execSQL("CREATE TABLE " + T_INVITATIONS + " (" +
+                "id TEXT PRIMARY KEY," +
+                "alliance_id TEXT NOT NULL," +
+                "sender_id TEXT NOT NULL," +
+                "receiver_id TEXT NOT NULL," +
+                "timestamp INTEGER NOT NULL," +
+                "status TEXT NOT NULL," +
+                "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE," +
+                "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE," +
+                "FOREIGN KEY(receiver_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
 
 
     }
@@ -131,6 +156,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         if (oldVersion < 5) {
             db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN friends_ids TEXT");
+        }
+        if (oldVersion < 6) {
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN current_alliance_id  TEXT");
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN fcm_token  TEXT");
+            db.execSQL("CREATE TABLE " + T_ALLIANCES + " (" +
+                    "id TEXT PRIMARY KEY, " +
+                    "name TEXT NOT NULL, " +
+                    "leader_id TEXT NOT NULL, " +
+                    "members_ids TEXT," +
+                    "current_mission_id TEXT," +
+                    "mission_status TEXT NOT NULL," +
+                    "FOREIGN KEY(leader_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                    ")");
+
+            db.execSQL("CREATE TABLE " + T_INVITATIONS + " (" +
+                    "id TEXT PRIMARY KEY," +
+                    "alliance_id TEXT NOT NULL," +
+                    "sender_id TEXT NOT NULL," +
+                    "receiver_id TEXT NOT NULL," +
+                    "timestamp INTEGER NOT NULL," +
+                    "status TEXT NOT NULL," +
+                    "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY(receiver_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                    ")");
         }
     }
 

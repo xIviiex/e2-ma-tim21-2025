@@ -2,6 +2,7 @@ package com.team21.questify.presentation.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -12,11 +13,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.team21.questify.R;
-import com.team21.questify.application.model.User;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
 
 import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
     private UserService userService;
@@ -46,24 +47,26 @@ public class MainActivity extends AppCompatActivity {
         initViews();
     }
     private void updateActiveDaysStreak(String userId) {
-        User user = userService.getUserById(userId);
+        userService.fetchUserProfile(userId).addOnSuccessListener(user -> {
+            long today = System.currentTimeMillis();
+            if (user.getLastActiveDate() != null && isSameDay(user.getLastActiveDate(), today)) {
+                return;
+            }
 
-        long today = System.currentTimeMillis();
-        if (user.getLastActiveDate() != null && isSameDay(user.getLastActiveDate(), today)) {
-            return;
-        }
+            long yesterday = today - TimeUnit.DAYS.toMillis(1);
 
-        long yesterday = today - 24L * 60 * 60 * 1000;
+            if (user.getLastActiveDate() != null && isSameDay(user.getLastActiveDate(), yesterday)) {
+                user.setConsecutiveActiveDays(user.getConsecutiveActiveDays() + 1);
+            } else {
+                user.setConsecutiveActiveDays(1);
+            }
 
-        if (user.getLastActiveDate() != null && isSameDay(user.getLastActiveDate(), yesterday)) {
-            user.setConsecutiveActiveDays(user.getConsecutiveActiveDays() + 1);
-        }
-        else if (user.getLastActiveDate() == null || !isSameDay(user.getLastActiveDate(), today)) {
-            user.setConsecutiveActiveDays(1);
-        }
+            user.setLastActiveDate(today);
+            userService.updateUser(user)
+                    .addOnSuccessListener(aVoid -> Log.d("MainActivity", "Active days streak updated."))
+                    .addOnFailureListener(e -> Log.e("MainActivity", "Failed to update streak.", e));
 
-        user.setLastActiveDate(today);
-        userService.updateUser(user);
+        }).addOnFailureListener(e -> Log.e("MainActivity", "Failed to fetch user for streak update.", e));
     }
 
     private boolean isSameDay(Long timestamp1, Long timestamp2) {

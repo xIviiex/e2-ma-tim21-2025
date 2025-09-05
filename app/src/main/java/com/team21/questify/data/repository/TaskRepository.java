@@ -95,7 +95,7 @@ public class TaskRepository {
         });
     }
 
-    
+
 
     public Map<String, Integer> getCompletedTaskCountsByCategory(String userId) {
         return localDataSource.getCompletedTaskCountsByCategory(userId);
@@ -120,4 +120,3 @@ public class TaskRepository {
     }
 
 }
-

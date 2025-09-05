@@ -9,13 +9,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.auth.AuthResult;
 import com.team21.questify.R;
 import com.team21.questify.application.service.UserService;
 
@@ -23,6 +19,7 @@ public class RegistrationActivity extends AppCompatActivity {
     private TextInputLayout tilEmail, tilPassword, tilConfirmPassword, tilUsername;
     private ImageView ivAvatar1, ivAvatar2, ivAvatar3, ivAvatar4, ivAvatar5;
     private UserService userService;
+    private Button registerButton;
 
     private ImageView selectedAvatar = null;
     private String selectedAvatarName = null;
@@ -38,7 +35,7 @@ public class RegistrationActivity extends AppCompatActivity {
         tilPassword = findViewById(R.id.til_password);
         tilConfirmPassword = findViewById(R.id.til_confirm_password);
         tilUsername = findViewById(R.id.til_username);
-        Button registerButton = findViewById(R.id.btn_register);
+        registerButton = findViewById(R.id.btn_register);
         TextView loginLink = findViewById(R.id.tv_login_link);
 
         ivAvatar1 = findViewById(R.id.iv_avatar1);
@@ -64,37 +61,24 @@ public class RegistrationActivity extends AppCompatActivity {
     }
 
     private void handleRegistration() {
-        String email = tilEmail.getEditText() != null ? tilEmail.getEditText().getText().toString().trim() : "";
-        String password = tilPassword.getEditText() != null ? tilPassword.getEditText().getText().toString().trim() : "";
-        String confirmPassword = tilConfirmPassword.getEditText() != null ? tilConfirmPassword.getEditText().getText().toString().trim() : "";
-        String username = tilUsername.getEditText() != null ? tilUsername.getEditText().getText().toString().trim() : "";
+        if (!validateAllFields()) {
+            return;
+        }
 
-        userService.registerUser(email, password, confirmPassword, username, selectedAvatarName, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if (task.isSuccessful()) {
-                    Toast.makeText(RegistrationActivity.this, "We sent you a verification email. Please activate your account.", Toast.LENGTH_LONG).show();
-                    Intent intent = new Intent(RegistrationActivity.this, LoginActivity.class);
-                    startActivity(intent);
+        String email = tilEmail.getEditText().getText().toString().trim();
+        String password = tilPassword.getEditText().getText().toString().trim();
+        String confirmPassword = tilConfirmPassword.getEditText().getText().toString().trim();
+        String username = tilUsername.getEditText().getText().toString().trim();
+
+        userService.registerUser(email, password, confirmPassword, username, selectedAvatarName)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(RegistrationActivity.this, "Verification email sent. Please activate your account.", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
                     finish();
-                } else {
-                    String errorMessage = task.getException().getMessage();
-                    Toast.makeText(RegistrationActivity.this, "Registration failed: " + errorMessage, Toast.LENGTH_SHORT).show();
-
-                    if (errorMessage != null) {
-                        if (errorMessage.contains("Invalid email")) {
-                            tilEmail.setError("Invalid email.");
-                        } else if (errorMessage.contains("Password has to have")) {
-                            tilPassword.setError("Password has to have at least 8 characters.");
-                        } else if (errorMessage.contains("Passwords are not matching")) {
-                            tilConfirmPassword.setError("The passwords do not match.");
-                        } else if (errorMessage.contains("Username has to have")) {
-                            tilUsername.setError("Username has to have 3-20 characters, without spaces.");
-                        }
-                    }
-                }
-            }
-        });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(RegistrationActivity.this, "Registration failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 
     private void addTextWatchers() {

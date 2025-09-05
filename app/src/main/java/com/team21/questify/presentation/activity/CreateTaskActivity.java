@@ -230,81 +230,90 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
             return;
         }
 
-        // Kreiramo Task objekat
-        Task newTask = new Task();
-        User user = userService.getUserById(sharedPreferences.getUserUid());
-
-        newTask.setName(name);
-        newTask.setDescription(description);
-        newTask.setTaskCategoryId(selectedCategoryId);
-        newTask.setTaskType(taskType);
-        newTask.setTaskDifficulty(difficulty);
-        newTask.setTaskPriority(priority);
-        newTask.setExecutionTime(executionTimeMillis);
-        newTask.calculateAndSetXp(user.getLevel());
-
-        if (taskType == TaskType.RECURRING) {
-            String intervalStr = etRecurringInterval.getText().toString().trim();
-            if (intervalStr.isEmpty()) {
-                etRecurringInterval.setError("Interval required");
-                return;
-            }
-
+        userService.fetchUserProfile(sharedPreferences.getUserUid())
+                .addOnSuccessListener(user -> {
+                    // Kreiramo Task objekat
+                    Task newTask = new Task();
+                    newTask.setName(name);
+                    newTask.setDescription(description);
+                    newTask.setTaskCategoryId(selectedCategoryId);
+                    newTask.setTaskType(taskType);
+                    newTask.setTaskDifficulty(difficulty);
+                    newTask.setTaskPriority(priority);
+                    newTask.setExecutionTime(executionTimeMillis);
+                    newTask.calculateAndSetXp(user.getLevel());
+                    if (taskType == TaskType.RECURRING) {
+                        String intervalStr = etRecurringInterval.getText().toString().trim();
+                        if (intervalStr.isEmpty()) {
+                            etRecurringInterval.setError("Interval required");
+                            return;
+                        }
 
 
-            int interval = Integer.parseInt(intervalStr);
-            try {
-                interval = Integer.parseInt(intervalStr);
-                if (interval <= 0) {
-                    etRecurringInterval.setError("Interval must be greater than 0");
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                etRecurringInterval.setError("Invalid number");
-                return;
-            }
+
+                        int interval = Integer.parseInt(intervalStr);
+                        try {
+                            interval = Integer.parseInt(intervalStr);
+                            if (interval <= 0) {
+                                etRecurringInterval.setError("Interval must be greater than 0");
+                                return;
+                            }
+                        } catch (NumberFormatException e) {
+                            etRecurringInterval.setError("Invalid number");
+                            return;
+                        }
 
 
-            RecurrenceUnit unit = RecurrenceUnit.valueOf(spinnerRecurrenceUnit.getSelectedItem().toString());
+                        RecurrenceUnit unit = RecurrenceUnit.valueOf(spinnerRecurrenceUnit.getSelectedItem().toString());
 
-            Calendar startCal = Calendar.getInstance();
-            startCal.clear();
-            startCal.set(dpStartDate.getYear(), dpStartDate.getMonth(), dpStartDate.getDayOfMonth());
-
-
-            Calendar endCal = Calendar.getInstance();
-            endCal.clear();
-            endCal.set(dpEndDate.getYear(), dpEndDate.getMonth(), dpEndDate.getDayOfMonth());
-
-            if (endCal.before(startCal)) {
-                Toast.makeText(this, "End date cannot be before start date", Toast.LENGTH_SHORT).show();
-                return;
-            }
+                        Calendar startCal = Calendar.getInstance();
+                        startCal.clear();
+                        startCal.set(dpStartDate.getYear(), dpStartDate.getMonth(), dpStartDate.getDayOfMonth());
 
 
-            newTask.setRecurringInterval(interval);
-            newTask.setRecurrenceUnit(unit);
-            newTask.setRecurringStartDate(startCal.getTimeInMillis());
-            newTask.setRecurringEndDate(endCal.getTimeInMillis());
-        }
-        else {
-            // Ako nije RECURRING, ostavi sve vezano za ponavljanje na null ili podrazumevane vrednosti
-            newTask.setRecurringInterval(0);
-            newTask.setRecurrenceUnit(null);
-            newTask.setRecurringStartDate(null);
-            newTask.setRecurringEndDate(null);
-        }
+                        Calendar endCal = Calendar.getInstance();
+                        endCal.clear();
+                        endCal.set(dpEndDate.getYear(), dpEndDate.getMonth(), dpEndDate.getDayOfMonth());
 
-        taskService.createTask(newTask, task -> {
-            if (task != null && task.isSuccessful()) {
-                Toast.makeText(this, "Task created!", Toast.LENGTH_SHORT).show();
-                taskService.createOccurrences(newTask);
+                        if (endCal.before(startCal)) {
+                            Toast.makeText(this, "End date cannot be before start date", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
 
-                finish();
-            } else {
-                Toast.makeText(this, "Failed to create task", Toast.LENGTH_SHORT).show();
-            }
-        });
+
+                        newTask.setRecurringInterval(interval);
+                        newTask.setRecurrenceUnit(unit);
+                        newTask.setRecurringStartDate(startCal.getTimeInMillis());
+                        newTask.setRecurringEndDate(endCal.getTimeInMillis());
+                    }
+                    else {
+                        // Ako nije RECURRING, ostavi sve vezano za ponavljanje na null ili podrazumevane vrednosti
+                        newTask.setRecurringInterval(0);
+                        newTask.setRecurrenceUnit(null);
+                        newTask.setRecurringStartDate(null);
+                        newTask.setRecurringEndDate(null);
+                    }
+
+                    taskService.createTask(newTask, task -> {
+                        if (task != null && task.isSuccessful()) {
+                            Toast.makeText(this, "Task created!", Toast.LENGTH_SHORT).show();
+                            taskService.createOccurrences(newTask);
+
+                            finish();
+                        } else {
+                            Toast.makeText(this, "Failed to create task", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    // Greška pri dohvatanju korisnika
+                    Log.e("CreateTaskActivity", "Failed to get user for task creation.", e);
+                    Toast.makeText(this, "Error: Could not get user data.", Toast.LENGTH_LONG).show();
+                });
+
+
+
+
 
     }
 

@@ -1,10 +1,10 @@
 package com.team21.questify.application.service;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.gms.tasks.Task;
 import com.team21.questify.application.model.TaskOccurrence;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.TaskDifficulty;
@@ -12,20 +12,17 @@ import com.team21.questify.application.model.enums.TaskStatus;
 import com.team21.questify.data.repository.TaskOccurrenceRepository;
 import com.team21.questify.data.repository.TaskRepository;
 import com.team21.questify.data.repository.UserRepository;
-import com.team21.questify.utils.LevelCalculator;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
 
 public class UserStatisticsService {
     private final TaskOccurrenceRepository taskOccurrenceRepository;
@@ -162,12 +159,13 @@ public class UserStatisticsService {
         return weeklyXp;
     }
 
-    public int getConsecutiveActiveDays(String userId) {
-        User user = userRepository.getUserFromLocalDb(userId);
-        if (user == null) {
+    public Task<Integer> getConsecutiveActiveDays(String userId) {
+        return userRepository.getUserById(userId).continueWith(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                return task.getResult().getConsecutiveActiveDays();
+            }
             return 0;
-        }
-        return user.getConsecutiveActiveDays();
+        });
     }
 
 }

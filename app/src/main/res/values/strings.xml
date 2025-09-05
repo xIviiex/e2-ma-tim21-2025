@@ -37,4 +37,7 @@
     <string name="no_users_found_matching_your_search">No users found matching your search.</string>
     <string name="search_failed">Search failed. Please try again later.</string>
     <string name="remove_friend_button">Remove</string>
+    <string name="create_alliance">Create alliance</string>
+    <string name="enter_alliance_name">Enter Alliance Name</string>
+    <string name="alliance_name">Alliance Name</string>
 </resources>
