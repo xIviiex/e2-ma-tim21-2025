@@ -2,11 +2,14 @@ package com.team21.questify.presentation.activity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
@@ -23,6 +26,7 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.google.android.gms.tasks.Tasks;
 import com.team21.questify.R;
 import com.team21.questify.application.model.enums.TaskStatus;
 import com.team21.questify.application.service.UserStatisticsService;
@@ -46,6 +50,13 @@ public class UserStatisticsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_user_statistics);
 
+        Toolbar toolbar = findViewById(R.id.toolbar_statistics);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Statistics");
+        }
+
         statisticsService = new UserStatisticsService(this);
         sharedPrefs = new SharedPrefs(this);
         currentUserId = sharedPrefs.getUserUid();
@@ -55,13 +66,22 @@ public class UserStatisticsActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private void loadAndDisplayStatistics() {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
                 final Map<TaskStatus, Integer> taskCounts = statisticsService.getTaskCountsByStatus(currentUserId);
                 final Map<String, Integer> weeklyXp = statisticsService.getWeeklyXp(currentUserId);
-                final int longestStreak = statisticsService.getLongestStreakOfCompletedTasks(currentUserId);
+                final int longestStreak = Tasks.await(statisticsService.getLongestStreakOfCompletedTasks(currentUserId));
                 final Map<String, Integer> categoryCounts = statisticsService.getCompletedTaskCountsByCategory(currentUserId);
                 final Map<String, Double> avgDifficulty = statisticsService.getAverageDailyDifficultyXp(currentUserId);
 

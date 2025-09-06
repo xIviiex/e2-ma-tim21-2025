@@ -138,4 +138,25 @@ public class TaskOccurrenceLocalDataSource {
         db.close();
         return occurrences;
     }
+
+    public void replaceAllForUser(String userId, List<TaskOccurrence> newOccurrences) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete(DatabaseHelper.T_TASK_OCCURRENCES, "user_id = ?", new String[]{userId});
+
+            for (TaskOccurrence occurrence : newOccurrences) {
+                ContentValues cv = new ContentValues();
+                cv.put("id", occurrence.getId());
+                cv.put("task_id", occurrence.getTaskId());
+                cv.put("user_id", occurrence.getUserId());
+                cv.put("date", occurrence.getDate());
+                cv.put("status", occurrence.getStatus().name());
+                db.insert(DatabaseHelper.T_TASK_OCCURRENCES, null, cv);
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
 }

@@ -17,6 +17,7 @@ import com.google.firebase.messaging.RemoteMessage;
 import com.team21.questify.R;
 import com.team21.questify.data.firebase.UserRemoteDataSource;
 import com.team21.questify.data.repository.UserRepository;
+import com.team21.questify.presentation.activity.ChatActivity;
 import com.team21.questify.utils.SharedPrefs;
 
 import java.util.Map;
@@ -35,17 +36,21 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
             String allianceName = data.get("allianceName");
             String senderName = data.get("senderName");
             String invitationId = data.get("invitationId");
-            String allianceId = data.get("allianceId");
 
-            showInvitationNotification(allianceName, senderName, invitationId, allianceId);
+            showInvitationNotification(allianceName, senderName, invitationId);
         } else if (data.containsKey("type") && data.get("type").equals("INVITATION_ACCEPTED")) {
             String receiverName = data.get("receiverName");
             String allianceName = data.get("allianceName");
             showInfoNotification(receiverName, allianceName);
+        } else if (data.containsKey("type") && data.get("type").equals("NEW_CHAT_MESSAGE")) {
+            String allianceId = data.get("allianceId");
+            String title = remoteMessage.getNotification() != null ? remoteMessage.getNotification().getTitle() : "New Message";
+            String body = remoteMessage.getNotification() != null ? remoteMessage.getNotification().getBody() : "You have a new message.";
+            showChatMessageNotification(title, body, allianceId);
         }
     }
 
-    private void showInvitationNotification(String allianceName, String senderName, String invitationId, String allianceId) {
+    private void showInvitationNotification(String allianceName, String senderName, String invitationId) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
         NotificationChannel channel = new NotificationChannel(
@@ -102,6 +107,25 @@ public class FirebaseMessagingService extends com.google.firebase.messaging.Fire
                 .setAutoCancel(true);
 
         notificationManager.notify(0, builder.build());
+    }
+
+    private void showChatMessageNotification(String title, String body, String allianceId) {
+        Intent intent = new Intent(this, ChatActivity.class);
+        intent.putExtra("allianceId", allianceId);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, allianceId.hashCode(), intent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent);
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(allianceId.hashCode(), builder.build());
     }
 
     @Override

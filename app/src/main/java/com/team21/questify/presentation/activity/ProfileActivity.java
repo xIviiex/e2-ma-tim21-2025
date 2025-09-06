@@ -99,7 +99,8 @@ public class ProfileActivity extends AppCompatActivity {
         btnChangePassword.setVisibility(myProfileVisibility);
 
         if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle(isMyProfile ? R.string.my_profile : R.string.user_profile);
+            String title = getString(isMyProfile ? R.string.my_profile : R.string.user_profile);
+            getSupportActionBar().setTitle(title);
         }
 
         if (isMyProfile) {

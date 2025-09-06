@@ -1,6 +1,7 @@
 package com.team21.questify.data.firebase;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.TaskOccurrence;
@@ -60,5 +61,11 @@ public class TaskOccurrenceRemoteDataSource {
                 .document(occurrenceId)
                 .delete()
                 .addOnCompleteListener(listener);
+    }
+
+    public Task<QuerySnapshot> getOccurrencesForUser(String userId) {
+        return db.collection("task_occurrences")
+                .whereEqualTo("userId", userId)
+                .get();
     }
 }
