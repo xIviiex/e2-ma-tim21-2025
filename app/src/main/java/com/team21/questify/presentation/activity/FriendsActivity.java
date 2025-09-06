@@ -44,8 +44,7 @@ public class FriendsActivity extends AppCompatActivity implements UsersAdapter.O
     private UserService userService;
     private SharedPrefs sharedPrefs;
     private SearchView searchView;
-    private TextView tvNoFriends;
-    private TextView tvFriendsTitle;
+    private TextView tvNoFriends, tvFriendsTitle;
     private String currentUserId;
     private Button createAllianceButton;
     private AllianceService allianceService;

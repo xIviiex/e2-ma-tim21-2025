@@ -43,44 +43,48 @@ public class UserStatisticsService {
         return taskRepository.getCompletedTaskCountsByCategory(userId);
     }
 
-    public int getLongestStreakOfCompletedTasks(String userId) {
-        List<TaskOccurrence> occurrences = taskOccurrenceRepository.getTaskOccurrencesByUserIdSortedByDate(userId);
-        if (occurrences.isEmpty()) {
-            return 0;
-        }
+    public Task<Integer> getLongestStreakOfCompletedTasks(String userId) {
+        return taskOccurrenceRepository.getTaskOccurrencesByUserIdSortedByDate(userId)
+                .continueWith(task -> {
+                    if (!task.isSuccessful()) {
+                        return 0;
+                    }
 
-        int longestStreak = 0;
-        int currentStreak = 0;
+                    List<TaskOccurrence> occurrences = task.getResult();
+                    if (occurrences.isEmpty()) {
+                        return 0;
+                    }
 
-        Map<String, Boolean> dailyStatus = getDailyStatus(occurrences);
+                    int longestStreak = 0;
+                    int currentStreak = 0;
+                    Map<String, Boolean> dailyStatus = getDailyStatus(occurrences);
+                    Calendar loopCal = Calendar.getInstance();
+                    Calendar todayCal = Calendar.getInstance();
 
-        String firstDateString = convertTimestampToDateString(occurrences.get(0).getDate());
-        String todayDateString = convertTimestampToDateString(System.currentTimeMillis());
-        Calendar calendar = Calendar.getInstance();
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            calendar.setTime(Objects.requireNonNull(sdf.parse(firstDateString)));
-        } catch (ParseException e) {
-            return 0;
-        }
+                    try {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                        loopCal.setTime(Objects.requireNonNull(sdf.parse(convertTimestampToDateString(occurrences.get(0).getDate()))));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                        return 0;
+                    }
 
-        while (!convertTimestampToDateString(calendar.getTimeInMillis()).equals(todayDateString)) {
-            String currentDateKey = convertTimestampToDateString(calendar.getTimeInMillis());
-
-            if (dailyStatus.containsKey(currentDateKey)) {
-                if (Boolean.TRUE.equals(dailyStatus.get(currentDateKey))) {
-                    currentStreak++;
-                } else {
-                    currentStreak = 0;
-                }
-            }
-
-            longestStreak = Math.max(longestStreak, currentStreak);
-
-            calendar.add(Calendar.DAY_OF_YEAR, 1);
-        }
-
-        return longestStreak;
+                    while (!loopCal.after(todayCal)) {
+                        String currentDateKey = convertTimestampToDateString(loopCal.getTimeInMillis());
+                        if (dailyStatus.containsKey(currentDateKey)) {
+                            if (Boolean.TRUE.equals(dailyStatus.get(currentDateKey))) {
+                                currentStreak++;
+                            } else {
+                                currentStreak = 0;
+                            }
+                        }
+                        if (currentStreak > longestStreak) {
+                            longestStreak = currentStreak;
+                        }
+                        loopCal.add(Calendar.DAY_OF_YEAR, 1);
+                    }
+                    return longestStreak;
+                });
     }
 
     @NonNull
@@ -93,8 +97,8 @@ public class UserStatisticsService {
             if (occurrence.getStatus() == TaskStatus.UNCOMPLETED || occurrence.getStatus() == TaskStatus.CANCELED) {
                 dailyStatus.put(dateKey, false);
             }
-            else if (occurrence.getStatus() == TaskStatus.COMPLETED && !dailyStatus.containsKey(dateKey)) {
-                dailyStatus.put(dateKey, true);
+            else if (occurrence.getStatus() == TaskStatus.COMPLETED) {
+                dailyStatus.putIfAbsent(dateKey, true);
             }
         }
         return dailyStatus;

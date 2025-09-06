@@ -6,13 +6,14 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 6;
+    public static final int DB_VERSION = 7;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
     public static final String T_TASKS = "tasks";
     public static final String T_TASK_OCCURRENCES = "task_occurrences";
     public static final String T_ALLIANCES = "alliances";
     public static final String T_INVITATIONS = "invitations";
+    public static final String T_MESSAGES = "messages";
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -100,6 +101,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "FOREIGN KEY(receiver_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                 ")");
 
+        db.execSQL("CREATE TABLE " + T_MESSAGES + " (" +
+                "id TEXT PRIMARY KEY," +
+                "alliance_id TEXT NOT NULL," +
+                "sender_id TEXT NOT NULL," +
+                "sender_username TEXT NOT NULL," +
+                "message_text TEXT NOT NULL," +
+                "timestamp INTEGER NOT NULL," +
+                "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE," +
+                "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
 
     }
 
@@ -180,6 +191,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE," +
                     "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE," +
                     "FOREIGN KEY(receiver_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                    ")");
+        }
+        if (oldVersion < 7) {
+            db.execSQL("CREATE TABLE " + T_MESSAGES + " (" +
+                    "id TEXT PRIMARY KEY," +
+                    "alliance_id TEXT NOT NULL," +
+                    "sender_id TEXT NOT NULL," +
+                    "sender_username TEXT NOT NULL," +
+                    "message_text TEXT NOT NULL," +
+                    "timestamp INTEGER NOT NULL," +
+                    "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                     ")");
         }
     }

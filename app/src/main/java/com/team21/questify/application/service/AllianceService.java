@@ -12,6 +12,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.team21.questify.R;
 import com.team21.questify.application.model.Alliance;
+import com.team21.questify.application.model.ChatMessage;
 import com.team21.questify.application.model.Invitation;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.MissionStatus;
@@ -379,6 +380,65 @@ public class AllianceService {
                         invitedIds.add(invitation.getReceiverId());
                     }
                     return invitedIds;
+                });
+    }
+
+    public Task<Void> sendChatMessageNotification(ChatMessage message) {
+        return allianceRepository.getAllianceById(message.getAllianceId())
+                .continueWithTask(allianceTask -> {
+                    if (!allianceTask.isSuccessful() || allianceTask.getResult() == null) {
+                        throw new Exception("Alliance not found for chat notification.");
+                    }
+                    Alliance alliance = allianceTask.getResult();
+                    List<String> memberIds = new ArrayList<>(alliance.getMembersIds());
+
+                    memberIds.remove(message.getSenderId());
+
+                    if (memberIds.isEmpty()) {
+                        return Tasks.forResult(null);
+                    }
+
+                    return userRepository.getUsersByIds(memberIds).continueWithTask(usersTask -> {
+                        if (!usersTask.isSuccessful()) {
+                            throw new Exception("Could not fetch members to send notifications.");
+                        }
+                        List<User> members = usersTask.getResult();
+                        List<String> tokens = new ArrayList<>();
+                        for (User member : members) {
+                            if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                                tokens.add(member.getFcmToken());
+                            }
+                        }
+
+                        if (tokens.isEmpty()) {
+                            return Tasks.forResult(null);
+                        }
+
+                        try {
+                            JSONObject notificationJson = new JSONObject();
+                            notificationJson.put("title", "New message in " + alliance.getName());
+                            notificationJson.put("body", message.getSenderUsername() + ": " + message.getMessageText());
+
+                            JSONObject dataJson = new JSONObject();
+                            dataJson.put("type", "NEW_CHAT_MESSAGE");
+                            dataJson.put("allianceId", message.getAllianceId());
+
+                            for (String token : tokens) {
+                                JSONObject messageJson = new JSONObject();
+                                messageJson.put("token", token);
+                                messageJson.put("notification", notificationJson);
+                                messageJson.put("data", dataJson);
+
+                                JSONObject mainJson = new JSONObject();
+                                mainJson.put("message", messageJson);
+                                sendFcmRequest(mainJson);
+                            }
+
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error creating chat notification JSON", e);
+                        }
+                        return Tasks.forResult(null);
+                    });
                 });
     }
 }

@@ -1,12 +1,18 @@
 package com.team21.questify.presentation.activity;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuItem;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.widget.Toolbar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -29,7 +35,7 @@ import java.util.List;
 public class AllianceActivity extends AppCompatActivity {
     private static final String TAG = "AllianceActivity";
 
-    private TextView tvAllianceName, tvLeaderInfo;
+    private TextView tvLeaderInfo;
     private Button btnInviteFriends, btnDisbandLeave;
     private RecyclerView rvMembers;
     private AllianceService allianceService;
@@ -43,6 +49,12 @@ public class AllianceActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alliance);
 
+        Toolbar toolbar = findViewById(R.id.toolbar_alliance);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
         initServices();
         initViews();
 
@@ -61,6 +73,29 @@ public class AllianceActivity extends AppCompatActivity {
         loadAllianceDetails(allianceId);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_alliance, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_chat) {
+            Intent intent = new Intent(AllianceActivity.this, ChatActivity.class);
+            intent.putExtra("allianceId", allianceId);
+            startActivity(intent);
+            return true;
+        } else if (id == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
     private void initServices() {
         userService = new UserService(this);
         allianceService = new AllianceService(this);
@@ -68,7 +103,6 @@ public class AllianceActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        tvAllianceName = findViewById(R.id.tv_alliance_name);
         tvLeaderInfo = findViewById(R.id.tv_leader_info);
         btnInviteFriends = findViewById(R.id.btn_invite_friends);
         btnDisbandLeave = findViewById(R.id.btn_disband_leave_alliance);
@@ -100,7 +134,9 @@ public class AllianceActivity extends AppCompatActivity {
     }
 
     private void updateUI(Alliance alliance) {
-        tvAllianceName.setText(alliance.getName());
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle(alliance.getName());
+        }
 
         userService.fetchUserProfile(alliance.getLeaderId())
                 .addOnSuccessListener(leader -> tvLeaderInfo.setText("Leader: " + (leader != null ? leader.getUsername() : "Unknown")))
@@ -117,8 +153,10 @@ public class AllianceActivity extends AppCompatActivity {
         String currentUserId = sharedPrefs.getUserUid();
         if (currentUserId != null && currentUserId.equals(alliance.getLeaderId())) {
             btnDisbandLeave.setText("Disband Alliance");
+            btnInviteFriends.setVisibility(View.VISIBLE);
         } else {
             btnDisbandLeave.setText("Leave Alliance");
+            btnInviteFriends.setVisibility(View.GONE);
         }
     }
 

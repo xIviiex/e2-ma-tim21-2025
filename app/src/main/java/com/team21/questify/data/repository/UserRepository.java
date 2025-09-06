@@ -10,6 +10,7 @@ import com.team21.questify.application.model.User;
 import com.team21.questify.data.database.UserLocalDataSource;
 import com.team21.questify.data.firebase.UserRemoteDataSource;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -156,5 +157,26 @@ public class UserRepository {
                             return null;
                         })
                 );
+    }
+
+    public Task<List<User>> getUsersByIds(List<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Tasks.forResult(new ArrayList<>());
+        }
+
+        List<Task<User>> tasks = new ArrayList<>();
+        for (String id : userIds) {
+            tasks.add(getUserById(id));
+        }
+
+        return Tasks.whenAllSuccess(tasks).continueWith(task -> {
+            List<User> userList = new ArrayList<>();
+            for (Object obj : task.getResult()) {
+                if (obj instanceof User) {
+                    userList.add((User) obj);
+                }
+            }
+            return userList;
+        });
     }
 }

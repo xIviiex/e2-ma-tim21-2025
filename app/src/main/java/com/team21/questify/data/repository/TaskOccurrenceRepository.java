@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.team21.questify.application.model.TaskOccurrence;
@@ -20,17 +21,21 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class TaskOccurrenceRepository {
     private final TaskOccurrenceLocalDataSource localDataSource;
     private final TaskOccurrenceRemoteDataSource remoteDataSource;
     private final DatabaseHelper dbHelper;
+    private final Executor executor;
 
 
     public TaskOccurrenceRepository(Context context) {
         this.localDataSource = new TaskOccurrenceLocalDataSource(context);
         this.remoteDataSource = new TaskOccurrenceRemoteDataSource();
         this.dbHelper = new DatabaseHelper(context);
+        this.executor = Executors.newSingleThreadExecutor();
     }
 
     public void createOccurrence(TaskOccurrence occurrence, OnCompleteListener<Void> listener) {
@@ -90,8 +95,15 @@ public class TaskOccurrenceRepository {
         return enumCounts;
     }
 
-    public List<TaskOccurrence> getTaskOccurrencesByUserIdSortedByDate(String userId) {
-        return localDataSource.getTaskOccurrencesByUserIdSortedByDate(userId);
+    public Task<List<TaskOccurrence>> getTaskOccurrencesByUserIdSortedByDate(String userId) {
+        return remoteDataSource.getOccurrencesForUser(userId)
+                .onSuccessTask(querySnapshot ->
+                        Tasks.call(executor, () -> {
+                            List<TaskOccurrence> remoteOccurrences = querySnapshot.toObjects(TaskOccurrence.class);
+                            localDataSource.replaceAllForUser(userId, remoteOccurrences);
+                            return localDataSource.getTaskOccurrencesByUserIdSortedByDate(userId);
+                        })
+                );
     }
 
 }
