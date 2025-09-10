@@ -51,8 +51,10 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
 
     // Novi članovi za ponavljajuće zadatke
     private LinearLayout recurringFieldsLayout;
+    private LinearLayout oneTimeFieldsLayout;
     private EditText etRecurringInterval;
     private Spinner spinnerRecurrenceUnit;
+    private DatePicker dpDate;
     private DatePicker dpStartDate;
     private DatePicker dpEndDate;
     private View btnCreateTask;
@@ -102,6 +104,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
             // Ako fragment postoji, osiguravamo da je listener postavljen.
             ((TaskCategoryFragment) existingFragment).setCategorySelectedListener(this);
         }
+        oneTimeFieldsLayout.setVisibility(View.VISIBLE);
     }
 
     private void initViews() {
@@ -117,6 +120,8 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         dpStartDate = findViewById(R.id.dp_start_date);
         dpEndDate = findViewById(R.id.dp_end_date);
         btnCreateTask = findViewById(R.id.btn_create_task);
+        oneTimeFieldsLayout = findViewById(R.id.oneTimeFieldsLayout);
+        dpDate = findViewById(R.id.dp_onetime_date);
 
     }
 
@@ -173,9 +178,12 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
                 // Dobijanje tipa zadatka na osnovu ID-a
                 TaskType selectedType = TaskType.values()[checkedId];
 
+
                 if (selectedType == TaskType.RECURRING) {
                     recurringFieldsLayout.setVisibility(View.VISIBLE);
+                    oneTimeFieldsLayout.setVisibility(View.GONE);
                 } else {
+                    oneTimeFieldsLayout.setVisibility(View.VISIBLE);
                     recurringFieldsLayout.setVisibility(View.GONE);
                 }
             }
@@ -242,6 +250,12 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
                     newTask.setTaskPriority(priority);
                     newTask.setExecutionTime(executionTimeMillis);
                     newTask.calculateAndSetXp(user.getLevel());
+
+                    Calendar oneTimeCal = Calendar.getInstance();
+                    oneTimeCal.clear();
+                    oneTimeCal.set(dpDate.getYear(), dpDate.getMonth(), dpDate.getDayOfMonth());
+                    newTask.setRecurringStartDate(oneTimeCal.getTimeInMillis());
+
                     if (taskType == TaskType.RECURRING) {
                         String intervalStr = etRecurringInterval.getText().toString().trim();
                         if (intervalStr.isEmpty()) {
@@ -290,7 +304,6 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
                         // Ako nije RECURRING, ostavi sve vezano za ponavljanje na null ili podrazumevane vrednosti
                         newTask.setRecurringInterval(0);
                         newTask.setRecurrenceUnit(null);
-                        newTask.setRecurringStartDate(null);
                         newTask.setRecurringEndDate(null);
                     }
 

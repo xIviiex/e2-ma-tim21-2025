@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class TaskViewHolder extends RecyclerView.ViewHolder {
     private final TextView taskTitleTextView;
@@ -54,9 +55,11 @@ public class TaskViewHolder extends RecyclerView.ViewHolder {
             int color = categoryColorMap.getOrDefault(task.getTaskCategoryId(), Color.GRAY);
             colorIndicator.setBackgroundTintList(ColorStateList.valueOf(color));
 
-            // Formatiraj vreme
-            Date executionDate = new Date(task.getExecutionTime());
-            String formattedTime = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(executionDate);
+            long executionTimeMillis = task.getExecutionTime();
+            long hours = TimeUnit.MILLISECONDS.toHours(executionTimeMillis);
+            long minutes = TimeUnit.MILLISECONDS.toMinutes(executionTimeMillis) % 60;
+            String formattedTime = String.format(Locale.getDefault(), "%02d:%02d", hours, minutes);
+
             taskTimeTextView.setText(formattedTime);
 
             itemView.setOnClickListener(v -> {

@@ -129,6 +129,35 @@
                 android:layout_marginBottom="16dp">
             </RadioGroup>
 
+            <!-- NOVI: Kontejner za polja jednokratni zadatka -->
+            <LinearLayout
+                android:id="@+id/oneTimeFieldsLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Birač datuma za početni datum -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Date"
+                    android:textSize="16sp"
+                    android:layout_marginTop="8dp" />
+                <DatePicker
+                    android:id="@+id/dp_onetime_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:datePickerMode="spinner"
+                    android:calendarViewShown="false"
+                    android:layout_marginBottom="16dp"/>
+
+
+            </LinearLayout>
+
+
+
             <!-- NOVI: Kontejner za polja ponavljajućeg zadatka -->
             <LinearLayout
                 android:id="@+id/recurringFieldsLayout"

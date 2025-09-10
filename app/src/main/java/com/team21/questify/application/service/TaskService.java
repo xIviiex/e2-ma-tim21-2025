@@ -123,13 +123,7 @@ public class TaskService {
         occurrence.setTaskId(task.getId());
         occurrence.setUserId(userId);
 
-        // Čuvamo samo datum, na primer kao danas na ponoć
-        Calendar calendar = Calendar.getInstance();
-        resetTimeToMidnight(calendar);
-
-        long dateOnlyMillis = calendar.getTimeInMillis();
-
-        occurrence.setDate(dateOnlyMillis);
+        occurrence.setDate(task.getRecurringStartDate());
         occurrence.setStatus(TaskStatus.UNCOMPLETED);
 
         taskOccurrenceService.createTaskOccurrence(occurrence, result -> {
