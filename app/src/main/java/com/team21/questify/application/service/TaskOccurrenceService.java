@@ -59,6 +59,23 @@ public class TaskOccurrenceService {
     }
 
 
+    public void getOccurrencesByTaskId(String taskId, OnCompleteListener<List<TaskOccurrence>> listener) {
+
+        repository.getOccurrencesByTaskId(taskId, listener);
+    }
+
+    public void findFutureOccurrences(String taskId, long fromDate, OnCompleteListener<List<TaskOccurrence>> listener) {
+        repository.findFutureOccurrences(taskId, fromDate, listener);
+    }
+
+    public void updateOccurrenceTaskId(String occurrenceId, String newTaskId, OnCompleteListener<Void> listener) {
+        repository.updateOccurrenceTaskId(occurrenceId, newTaskId, listener);
+    }
+
+
+
+
+
 
 
 }

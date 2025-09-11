@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.Task;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class TaskRemoteDataSource {
@@ -50,6 +51,13 @@ public class TaskRemoteDataSource {
                 .document(taskId)
                 .update(updates)
                 .addOnCompleteListener(listener);
+    }
+
+
+    public void updateTaskEndDate(String taskId, Long newEndDate, OnCompleteListener<Void> listener) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("recurringEndDate", newEndDate); // Polje u Firestore-u se zove recurringEndDate
+        updateTask(taskId, updates, listener); // Koristimo generičku update metodu
     }
 
 

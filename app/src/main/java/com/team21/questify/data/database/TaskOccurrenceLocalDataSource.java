@@ -54,32 +54,6 @@ public class TaskOccurrenceLocalDataSource {
     }
 
 
-
-
-
-/*
-    public void updateTaskOccurrence(TaskOccurrence occurrence) {
-        SQLiteDatabase db = helper.getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put("task_id", occurrence.getTaskId());
-        cv.put("user_id", occurrence.getUserId());
-        cv.put("date", occurrence.getDate());
-        cv.put("status", occurrence.getStatus() != null ? occurrence.getStatus().name() : null);
-        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrence.getId()});
-        db.close();
-    }
-
-    public void deleteTaskOccurrence(String id) {
-        SQLiteDatabase db = helper.getWritableDatabase();
-        db.delete(DatabaseHelper.T_TASK_OCCURRENCES, "id = ?", new String[]{id});
-        db.close();
-    }
-*/
-
-
-
-
-
     private TaskOccurrence cursorToTaskOccurrence(Cursor c) {
         TaskOccurrence occurrence = new TaskOccurrence();
         occurrence.setId(c.getString(c.getColumnIndexOrThrow("id")));
@@ -158,5 +132,100 @@ public class TaskOccurrenceLocalDataSource {
         } finally {
             db.endTransaction();
         }
+    }
+
+
+
+
+    /**
+     * Pronalazi sva ponavljanja zadatka na osnovu task_id.
+     *
+     * @param taskId ID zadatka čija se ponavljanja traže.
+     * @return Lista TaskOccurrence objekata.
+     */
+    public List<TaskOccurrence> getOccurrencesByTaskId(String taskId) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null,
+                "task_id = ?", new String[]{taskId},
+                null, null, "date ASC"); // Sortirano po datumu
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                occurrences.add(cursorToTaskOccurrence(c));
+            }
+            c.close();
+        }
+        db.close();
+        return occurrences;
+    }
+
+    /**
+     * Pronalazi sva buduća i nezavršena ponavljanja za dati zadatak.
+     *
+     * @param taskId   ID zadatka.
+     * @param fromDate Datum od kog se traže ponavljanja (u milisekundama).
+     * @return Lista budućih TaskOccurrence objekata.
+     */
+    public List<TaskOccurrence> findFutureOccurrences(String taskId, long fromDate) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        String selection = "task_id = ? AND date >= ? AND (status IS NULL OR status != ?)";
+        String[] selectionArgs = {taskId, String.valueOf(fromDate), TaskStatus.COMPLETED.name()};
+
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null,
+                selection, selectionArgs,
+                null, null, "date ASC");
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                occurrences.add(cursorToTaskOccurrence(c));
+            }
+            c.close();
+        }
+        db.close();
+        return occurrences;
+    }
+
+
+    /**
+     * Ažurira celokupan objekat ponavljanja zadatka.
+     * @param occurrence Objekat sa novim podacima.
+     */
+    public void updateTaskOccurrence(TaskOccurrence occurrence) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        // Ne ažuriramo ID i user_id
+        cv.put("task_id", occurrence.getTaskId());
+        cv.put("date", occurrence.getDate());
+        cv.put("status", occurrence.getStatus() != null ? occurrence.getStatus().name() : null);
+        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrence.getId()});
+        db.close();
+    }
+
+    /**
+     * Ažurira samo task_id za određeno ponavljanje.
+     * Korisno kod izmene ponavljajućih zadataka.
+     *
+     * @param occurrenceId ID ponavljanja koje se menja.
+     * @param newTaskId    Novi task_id koji treba postaviti.
+     */
+    public void updateTaskOccurrenceTaskId(String occurrenceId, String newTaskId) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("task_id", newTaskId);
+        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrenceId});
+        db.close();
+    }
+
+    /**
+     * Briše ponavljanje zadatka iz baze.
+     * @param id ID ponavljanja koje se briše.
+     */
+    public void deleteTaskOccurrence(String id) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.delete(DatabaseHelper.T_TASK_OCCURRENCES, "id = ?", new String[]{id});
+        db.close();
     }
 }

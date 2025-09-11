@@ -1,11 +1,13 @@
 package com.team21.questify.presentation.fragment;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.fragment.app.DialogFragment;
@@ -18,6 +20,7 @@ import com.team21.questify.application.model.TaskOccurrence;
 import com.team21.questify.application.model.enums.TaskStatus;
 import com.team21.questify.application.service.TaskCategoryService;
 import com.team21.questify.application.service.TaskService;
+import com.team21.questify.presentation.activity.EditTaskActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -80,6 +83,22 @@ public class TaskDetailsDialogFragment extends DialogFragment {
         TextView xpTextView = view.findViewById(R.id.textViewXP);
         TextView statusTextView = view.findViewById(R.id.textViewStatus); // Added the new TextView
         Button closeButton = view.findViewById(R.id.buttonClose);
+
+        ImageView editButton = view.findViewById(R.id.edit_button);
+        editButton.setOnClickListener(v -> {
+            if (taskOccurrence != null) {
+                String taskId = taskOccurrence.getTaskId();
+
+                // Otvori EditTaskActivity i prosledi taskId
+                Intent intent = new Intent(getContext(), EditTaskActivity.class);
+                intent.putExtra("TASK_ID", taskId);
+                startActivity(intent);
+
+                // Opcionalno: zatvori dialog
+                dismiss();
+            }
+        });
+
 
         closeButton.setOnClickListener(v -> dismiss());
 

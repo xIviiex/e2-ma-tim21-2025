@@ -3,6 +3,7 @@ package com.team21.questify.data.firebase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.team21.questify.application.model.TaskOccurrence;
 
@@ -37,11 +38,19 @@ public class TaskOccurrenceRemoteDataSource {
     }
 
 
-    public void getOccurrencesByDateAndStatus(String userId, Long date, String status, OnCompleteListener<QuerySnapshot> listener) {
+    public void getOccurrencesByTaskId(String taskId, OnCompleteListener<QuerySnapshot> listener) {
         db.collection(OCCURRENCES_COLLECTION)
-                .whereEqualTo("userId", userId)
-                .whereEqualTo("date", date)
-                .whereEqualTo("status", status)
+                .whereEqualTo("taskId", taskId)
+                .orderBy("date", Query.Direction.ASCENDING) // Sortirano po datumu
+                .get()
+                .addOnCompleteListener(listener);
+    }
+
+    public void findFutureOccurrences(String taskId, long fromDate, OnCompleteListener<QuerySnapshot> listener) {
+        db.collection(OCCURRENCES_COLLECTION)
+                .whereEqualTo("taskId", taskId)
+                .whereGreaterThanOrEqualTo("date", fromDate)
+                .orderBy("date", Query.Direction.ASCENDING)
                 .get()
                 .addOnCompleteListener(listener);
     }
@@ -52,6 +61,14 @@ public class TaskOccurrenceRemoteDataSource {
         db.collection(OCCURRENCES_COLLECTION)
                 .document(occurrenceId)
                 .update(updates)
+                .addOnCompleteListener(listener);
+    }
+
+
+    public void updateOccurrenceTaskId(String occurrenceId, String newTaskId, OnCompleteListener<Void> listener) {
+        db.collection(OCCURRENCES_COLLECTION)
+                .document(occurrenceId)
+                .update("taskId", newTaskId)
                 .addOnCompleteListener(listener);
     }
 

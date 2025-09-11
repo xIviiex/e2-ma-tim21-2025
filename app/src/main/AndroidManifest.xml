@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
+            android:name=".presentation.activity.EditTaskActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activity.ChatActivity"
             android:exported="false" />
         <activity

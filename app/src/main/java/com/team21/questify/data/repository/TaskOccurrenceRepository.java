@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 public class TaskOccurrenceRepository {
     private final TaskOccurrenceLocalDataSource localDataSource;
@@ -105,5 +106,53 @@ public class TaskOccurrenceRepository {
                         })
                 );
     }
+
+
+
+    public void getOccurrencesByTaskId(String taskId, OnCompleteListener<List<TaskOccurrence>> listener) {
+        remoteDataSource.getOccurrencesByTaskId(taskId, taskRemote -> {
+            if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
+                List<TaskOccurrence> remoteOccurrences = taskRemote.getResult().toObjects(TaskOccurrence.class);
+                listener.onComplete(Tasks.forResult(remoteOccurrences));
+            } else {
+                // Fallback na lokalnu bazu ako remote ne uspe
+                executor.execute(() -> {
+                    List<TaskOccurrence> localOccurrences = localDataSource.getOccurrencesByTaskId(taskId);
+                    listener.onComplete(Tasks.forResult(localOccurrences));
+                });
+            }
+        });
+    }
+
+    public void findFutureOccurrences(String taskId, long fromDate, OnCompleteListener<List<TaskOccurrence>> listener) {
+        remoteDataSource.findFutureOccurrences(taskId, fromDate, taskRemote -> {
+            if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
+                List<TaskOccurrence> allFutureOccurrences = taskRemote.getResult().toObjects(TaskOccurrence.class);
+
+                // Dodatno filtriranje na klijentu
+                List<TaskOccurrence> uncompletedFutureOccurrences = allFutureOccurrences.stream()
+                        .filter(occ -> occ.getStatus() != TaskStatus.COMPLETED)
+                        .collect(Collectors.toList());
+
+                listener.onComplete(Tasks.forResult(uncompletedFutureOccurrences));
+            } else {
+                // Ako remote ne uspe, prosledi grešku
+                listener.onComplete(Tasks.forException(taskRemote.getException()));
+            }
+        });
+    }
+
+    public void updateOccurrenceTaskId(String occurrenceId, String newTaskId, OnCompleteListener<Void> listener) {
+        // Prvo ažuriraj remote bazu
+        remoteDataSource.updateOccurrenceTaskId(occurrenceId, newTaskId, taskRemote -> {
+            if (taskRemote.isSuccessful()) {
+                // Ako je remote uspeo, ažuriraj i lokalnu
+                executor.execute(() -> localDataSource.updateTaskOccurrenceTaskId(occurrenceId, newTaskId));
+            }
+            // Prosledi rezultat listeneru bez obzira na ishod lokalne operacije
+            listener.onComplete(taskRemote);
+        });
+    }
+
 
 }

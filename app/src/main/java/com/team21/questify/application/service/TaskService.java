@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +27,7 @@ public class TaskService {
     private static final String TAG = "TaskService";
     private final TaskRepository repository;
     private final TaskOccurrenceService taskOccurrenceService;
+    private final UserService userService;
     private final FirebaseAuth auth;
 
 
@@ -33,6 +35,7 @@ public class TaskService {
         this.repository = new TaskRepository(context);
         this.auth = FirebaseAuth.getInstance();
         this.taskOccurrenceService = new TaskOccurrenceService(context);
+        this.userService = new UserService(context);
     }
 
 
@@ -163,6 +166,177 @@ public class TaskService {
 
         repository.getTaskById(taskId, listener);
     }
+
+
+    private void updateOneTimeTask(Task updatedTask, OnCompleteListener<Void> listener) {
+        // Pozivamo metodu iz servisa
+        taskOccurrenceService.getOccurrencesByTaskId(updatedTask.getId(), occurrencesTask -> {
+            if (!occurrencesTask.isSuccessful() || occurrencesTask.getResult().isEmpty()) {
+                listener.onComplete(Tasks.forException(new Exception("Could not find occurrence for this task.")));
+                return;
+            }
+
+            TaskOccurrence occurrence = occurrencesTask.getResult().get(0);
+            if (occurrence.getStatus() == TaskStatus.COMPLETED) {
+                listener.onComplete(Tasks.forException(new Exception("Cannot edit a completed task.")));
+                return;
+            }
+
+            // 🚀 Fetch user profile i izračunaj XP pre update-a
+            FirebaseUser firebaseUser = auth.getCurrentUser();
+            if (firebaseUser == null) {
+                listener.onComplete(Tasks.forException(new Exception("User not authenticated.")));
+                return;
+            }
+
+            userService.fetchUserProfile(firebaseUser.getUid())
+                    .addOnSuccessListener(user -> {
+                        if (user != null) {
+                            updatedTask.calculateAndSetXp(user.getLevel());
+                        }
+                        repository.updateTask(updatedTask, listener);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Failed to fetch user profile for XP", e);
+                        // i dalje radi update bez recalculacije XP
+                        repository.updateTask(updatedTask, listener);
+                    });
+        });
+    }
+
+
+
+    private void updateRecurringTask(Task updatedTask, OnCompleteListener<Void> listener) {
+        String originalTaskId = updatedTask.getId();
+        long splitDate = System.currentTimeMillis();
+
+        // 1. Pronađi sva buduća, nezavršena ponavljanja
+        taskOccurrenceService.findFutureOccurrences(originalTaskId, splitDate, futureOccurrencesTask -> {
+            if (!futureOccurrencesTask.isSuccessful()) {
+                listener.onComplete(Tasks.forException(futureOccurrencesTask.getException()));
+                return;
+            }
+            List<TaskOccurrence> futureOccurrences = futureOccurrencesTask.getResult();
+
+            if (futureOccurrences.isEmpty()) {
+                listener.onComplete(Tasks.forException(new Exception("No future occurrences to update.")));
+                return;
+            }
+
+            // 2. Pronađi poslednje prošlo ponavljanje
+            taskOccurrenceService.getOccurrencesByTaskId(originalTaskId, allOccurrencesTask -> {
+                if (!allOccurrencesTask.isSuccessful()) {
+                    listener.onComplete(Tasks.forException(allOccurrencesTask.getException()));
+                    return;
+                }
+                List<TaskOccurrence> allOccurrences = allOccurrencesTask.getResult();
+                TaskOccurrence lastPastOccurrence = allOccurrences.stream()
+                        .filter(occ -> occ.getDate() < splitDate)
+                        .max(Comparator.comparing(TaskOccurrence::getDate))
+                        .orElse(null);
+
+                Long newEndDateForOldTask = (lastPastOccurrence != null) ? lastPastOccurrence.getDate() : null;
+
+                // 3. Ažuriraj krajnji datum starog zadatka
+                repository.updateTaskEndDate(originalTaskId, newEndDateForOldTask, updateEndDateTask -> {
+                    if (!updateEndDateTask.isSuccessful()) {
+                        listener.onComplete(updateEndDateTask);
+                        return;
+                    }
+
+                    // 4. Kreiraj novi Task asinhrono sa XP
+                    createNewTaskFromUpdate(updatedTask, futureOccurrences.get(0).getDate(), newTaskResult -> {
+                        if (!newTaskResult.isSuccessful()) {
+                            listener.onComplete(Tasks.forException(newTaskResult.getException()));
+                            return;
+                        }
+
+                        Task newTask = newTaskResult.getResult();
+
+                        // 5. Sačuvaj novi task u repozitorijum
+                        repository.createTask(newTask, createTask -> {
+                            if (!createTask.isSuccessful()) {
+                                listener.onComplete(createTask);
+                                return;
+                            }
+
+                            // 6. Preveži buduća ponavljanja na novi Task
+                            for (TaskOccurrence occurrence : futureOccurrences) {
+                                taskOccurrenceService.updateOccurrenceTaskId(occurrence.getId(), newTask.getId(), updateIdTask -> {
+                                    if (!updateIdTask.isSuccessful()) {
+                                        Log.e(TAG, "Failed to update occurrence " + occurrence.getId());
+                                    }
+                                });
+                            }
+
+                            listener.onComplete(Tasks.forResult(null));
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+
+    public void updateTask(Task updatedTask, OnCompleteListener<Void> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated.")));
+            return;
+        }
+
+        if (updatedTask.getTaskType() == TaskType.RECURRING) {
+            updateRecurringTask(updatedTask, listener);
+        } else {
+            updateOneTimeTask(updatedTask, listener);
+        }
+    }
+
+
+    private void createNewTaskFromUpdate(Task updatedTask, long newStartDate, OnCompleteListener<Task> listener) {
+        FirebaseUser firebaseUser = auth.getCurrentUser();
+        if (firebaseUser == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+
+        Task newTask = new Task();
+        newTask.setId(UUID.randomUUID().toString());
+        newTask.setUserId(firebaseUser.getUid());
+
+        // Preuzmi sve što se menja
+        newTask.setName(updatedTask.getName());
+        newTask.setDescription(updatedTask.getDescription());
+        newTask.setExecutionTime(updatedTask.getExecutionTime());
+        newTask.setTaskDifficulty(updatedTask.getTaskDifficulty());
+        newTask.setTaskPriority(updatedTask.getTaskPriority());
+
+        // Podesi recurrence parametre
+        newTask.setTaskType(updatedTask.getTaskType());
+        newTask.setRecurrenceUnit(updatedTask.getRecurrenceUnit());
+        newTask.setRecurringInterval(updatedTask.getRecurringInterval());
+        newTask.setRecurringStartDate(newStartDate);
+        newTask.setRecurringEndDate(updatedTask.getRecurringEndDate());
+        newTask.setTaskCategoryId(updatedTask.getTaskCategoryId());
+
+        // Dohvati user level i setuj XP asinhrono
+        userService.fetchUserProfile(firebaseUser.getUid())
+                .addOnSuccessListener(user -> {
+                    if (user != null) {
+                        newTask.calculateAndSetXp(user.getLevel());
+                    } else {
+                        Log.w(TAG, "User profile not found, XP not set");
+                    }
+                    listener.onComplete(Tasks.forResult(newTask));
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to fetch user profile for XP", e);
+                    // I dalje vraćamo task, ali XP može biti 0
+                    listener.onComplete(Tasks.forResult(newTask));
+                });
+    }
+
+
 
 
 
