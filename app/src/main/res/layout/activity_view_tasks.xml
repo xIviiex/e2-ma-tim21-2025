@@ -8,6 +8,18 @@
     tools:context=".presentation.activity.ViewTasksActivity">
 
 
+    <Button
+        android:id="@+id/btnViewCategories"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="Categories"
+        app:layout_constraintBottom_toBottomOf="@+id/viewSwitchSpinner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/viewSwitchSpinner" />
+
+
+
     <Spinner
         android:id="@+id/viewSwitchSpinner"
         android:layout_width="wrap_content"

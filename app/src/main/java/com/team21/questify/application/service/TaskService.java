@@ -87,7 +87,7 @@ public class TaskService {
             occurrence.setTaskId(task.getId());
             occurrence.setUserId(userId);
             occurrence.setDate(dateOnlyMillis);  // SAMO datum, bez vremena
-            occurrence.setStatus(TaskStatus.UNCOMPLETED);
+            occurrence.setStatus(TaskStatus.ACTIVE);
 
             taskOccurrenceService.createTaskOccurrence(occurrence, result -> {
                 if (result == null || !result.isSuccessful()) {
@@ -127,7 +127,7 @@ public class TaskService {
         occurrence.setUserId(userId);
 
         occurrence.setDate(task.getRecurringStartDate());
-        occurrence.setStatus(TaskStatus.UNCOMPLETED);
+        occurrence.setStatus(TaskStatus.ACTIVE);
 
         taskOccurrenceService.createTaskOccurrence(occurrence, result -> {
             if (result == null || !result.isSuccessful()) {
@@ -169,7 +169,7 @@ public class TaskService {
 
 
     private void updateOneTimeTask(Task updatedTask, OnCompleteListener<Void> listener) {
-        // Pozivamo metodu iz servisa
+
         taskOccurrenceService.getOccurrencesByTaskId(updatedTask.getId(), occurrencesTask -> {
             if (!occurrencesTask.isSuccessful() || occurrencesTask.getResult().isEmpty()) {
                 listener.onComplete(Tasks.forException(new Exception("Could not find occurrence for this task.")));
@@ -182,7 +182,7 @@ public class TaskService {
                 return;
             }
 
-            // 🚀 Fetch user profile i izračunaj XP pre update-a
+
             FirebaseUser firebaseUser = auth.getCurrentUser();
             if (firebaseUser == null) {
                 listener.onComplete(Tasks.forException(new Exception("User not authenticated.")));

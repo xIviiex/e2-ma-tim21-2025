@@ -8,6 +8,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.team21.questify.application.model.TaskOccurrence;
+import com.team21.questify.application.model.enums.TaskDifficulty;
+import com.team21.questify.application.model.enums.TaskPriority;
+import com.team21.questify.application.model.enums.TaskStatus;
 import com.team21.questify.data.repository.TaskOccurrenceRepository;
 
 import java.util.ArrayList;
@@ -23,6 +26,21 @@ public class TaskOccurrenceService {
         this.repository = new TaskOccurrenceRepository(context);
         this.auth = FirebaseAuth.getInstance();
     }
+
+    public void getTodaysCompletedOccurrencesForCurrentUser(OnCompleteListener<List<TaskOccurrence>> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            // Ako korisnik nije ulogovan, odmah vrati grešku.
+            Log.w(TAG, "Pokušaj dohvatanja završenih zadataka bez ulogovanog korisnika.");
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+
+        String userId = user.getUid();
+        // Pozovi metodu iz repozitorijuma.
+        repository.getTodaysCompletedOccurrencesForUser(userId, listener);
+    }
+
 
 
     public void createTaskOccurrence(TaskOccurrence newOccurrence, OnCompleteListener<Void> listener) {
@@ -72,10 +90,75 @@ public class TaskOccurrenceService {
         repository.updateOccurrenceTaskId(occurrenceId, newTaskId, listener);
     }
 
+    public void deleteOccurrenceAndFutureOnes(String taskId, OnCompleteListener<Void> listener) {
+        repository.deleteOccurrenceAndFutureOnes(taskId, listener);
+    }
 
 
 
 
+
+    public void updateOccurrenceStatus(String occurrenceId, TaskStatus status, OnCompleteListener<Void> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+        repository.updateOccurrenceStatus(occurrenceId, status, listener);
+    }
+
+
+    public void updateOldOccurrences() {
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser != null) {
+            repository.updateOldOccurrencesToUncompleted(currentUser.getUid());
+        } else {
+            Log.w("TaskOccurrenceService", "Cannot update old occurrences, no user is logged in.");
+        }
+    }
+
+    // =================================================================
+    // NEW METHODS FOR XP QUOTA CHECKING
+    // =================================================================
+
+
+    public void getTodaysCompletedTaskCountByDifficulty(TaskDifficulty difficulty, OnCompleteListener<Integer> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+        repository.getTodaysCompletedTaskCountByDifficulty(user.getUid(), difficulty, listener);
+    }
+
+    public void getTodaysCompletedTaskCountByPriority(TaskPriority priority, OnCompleteListener<Integer> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+        repository.getTodaysCompletedTaskCountByPriority(user.getUid(), priority, listener);
+    }
+
+
+    public void getThisWeeksCompletedTaskCount(TaskDifficulty difficulty, OnCompleteListener<Integer> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+        repository.getThisWeeksCompletedTaskCount(user.getUid(), difficulty, listener);
+    }
+
+
+    public void getThisMonthsCompletedTaskCount(TaskPriority priority, OnCompleteListener<Integer> listener) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            listener.onComplete(Tasks.forException(new Exception("User not authenticated")));
+            return;
+        }
+        repository.getThisMonthsCompletedTaskCount(user.getUid(), priority, listener);
+    }
 
 
 }
