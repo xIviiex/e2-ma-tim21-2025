@@ -86,47 +86,7 @@ public class TaskLocalDataSource {
         return task;
     }
 
-    /*
-        public List<Task> getAllTasks() {
-            List<Task> taskList = new ArrayList<>();
-            SQLiteDatabase db = helper.getReadableDatabase();
-            Cursor c = db.query(DatabaseHelper.T_TASKS, null, null, null, null, null, null);
-            if (c != null && c.moveToFirst()) {
-                do {
-                    taskList.add(cursorToTask(c));
-                } while (c.moveToNext());
-                c.close();
-            }
-            db.close();
-            return taskList;
-        }
 
-       public void updateTask(Task task) {
-            SQLiteDatabase db = helper.getWritableDatabase();
-            ContentValues cv = new ContentValues();
-            cv.put("user_id", task.getUserId());
-            cv.put("name", task.getName());
-            cv.put("description", task.getDescription());
-            cv.put("task_category_id", task.getTaskCategoryId());
-            cv.put("task_type", task.getTaskType().name());
-            cv.put("recurrence_unit", task.getRecurrenceUnit() != null ? task.getRecurrenceUnit().name() : null);
-            cv.put("recurring_interval", task.getRecurringInterval());
-            cv.put("recurring_start_date", task.getRecurringStartDate());
-            cv.put("recurring_end_date", task.getRecurringEndDate());
-            cv.put("execution_time", task.getExecutionTime());
-            cv.put("task_difficulty", task.getTaskDifficulty().name());
-            cv.put("task_priority", task.getTaskPriority().name());
-            cv.put("xp", task.getXp());
-            db.update(DatabaseHelper.T_TASKS, cv, "id = ?", new String[]{task.getId()});
-            db.close();
-        }
-
-        public void deleteTask(String taskId) {
-            SQLiteDatabase db = helper.getWritableDatabase();
-            db.delete(DatabaseHelper.T_TASKS, "id = ?", new String[]{taskId});
-            db.close();
-        }
-    */
     private Task cursorToTask(Cursor c) {
         Task task = new Task();
         task.setId(c.getString(c.getColumnIndexOrThrow("id")));
@@ -238,6 +198,59 @@ public class TaskLocalDataSource {
 
         return String.format(Locale.getDefault(), "%04d-%02d-%02d", year, month, day);
 
+    }
+
+
+
+    /**
+     * Ažurira sve podatke za postojeći zadatak.
+     * @param task Task objekat sa ažuriranim podacima.
+     */
+    public void updateTask(Task task) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        // ID se ne menja, on je u WHERE klauzuli
+        cv.put("user_id", task.getUserId());
+        cv.put("name", task.getName());
+        cv.put("description", task.getDescription());
+        cv.put("task_category_id", task.getTaskCategoryId());
+        cv.put("task_type", task.getTaskType().name());
+        cv.put("recurrence_unit", task.getRecurrenceUnit() != null ? task.getRecurrenceUnit().name() : null);
+        cv.put("recurring_interval", task.getRecurringInterval());
+        cv.put("recurring_start_date", task.getRecurringStartDate());
+        cv.put("recurring_end_date", task.getRecurringEndDate());
+        cv.put("execution_time", task.getExecutionTime());
+        cv.put("task_difficulty", task.getTaskDifficulty().name());
+        cv.put("task_priority", task.getTaskPriority().name());
+        cv.put("xp", task.getXp());
+        db.update(DatabaseHelper.T_TASKS, cv, "id = ?", new String[]{task.getId()});
+        db.close();
+    }
+
+
+    /**
+     * Ažurira samo krajnji datum ponavljanja za određeni zadatak.
+     * Ovo je optimizovano za "zatvaranje" serije ponavljajućih zadataka.
+     *
+     * @param taskId      ID zadatka koji se ažurira.
+     * @param newEndDate  Novi krajnji datum (u milisekundama).
+     */
+    public void updateTaskEndDate(String taskId, Long newEndDate) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("recurring_end_date", newEndDate);
+        db.update(DatabaseHelper.T_TASKS, cv, "id = ?", new String[]{taskId});
+        db.close();
+    }
+
+    /**
+     * Briše zadatak iz baze na osnovu njegovog ID-ja.
+     * @param taskId ID zadatka koji treba obrisati.
+     */
+    public void deleteTask(String taskId) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.delete(DatabaseHelper.T_TASKS, "id = ?", new String[]{taskId});
+        db.close();
     }
 
 }

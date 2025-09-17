@@ -1,8 +1,10 @@
 package com.team21.questify.presentation.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.Spinner;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,11 +17,21 @@ import com.team21.questify.presentation.fragment.ViewTasksListFragment;
 public class ViewTasksActivity extends AppCompatActivity {
 
     private Spinner viewSwitchSpinner;
+    private Button btnViewCategories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_tasks);
+
+        btnViewCategories = findViewById(R.id.btnViewCategories);
+
+        btnViewCategories.setOnClickListener(v -> {
+            // Kreirajte Intent za pokretanje TaskCategoryViewActivity
+            Intent intent = new Intent(ViewTasksActivity.this, TaskCategoryViewActivity.class);
+            startActivity(intent);
+        });
+
 
         viewSwitchSpinner = findViewById(R.id.viewSwitchSpinner);
 

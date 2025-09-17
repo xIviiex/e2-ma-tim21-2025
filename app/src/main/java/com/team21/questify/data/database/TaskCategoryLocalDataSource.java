@@ -71,4 +71,24 @@ public class TaskCategoryLocalDataSource {
         db.close();
         return category;
     }
+
+
+    public void updateCategory(TaskCategory category) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+
+        // Stavljamo samo polja koja se mogu menjati. ID se ne menja, a user_id
+        // bi trebalo da ostane isti.
+        cv.put("name", category.getName());
+        cv.put("hex_color", category.getHexColor());
+
+        // Definišemo WHERE klauzulu da bismo ažurirali samo pravi red
+        String whereClause = "id = ?";
+        String[] whereArgs = { category.getId() };
+
+        // Izvrši update
+        db.update(DatabaseHelper.T_TASK_CATEGORIES, cv, whereClause, whereArgs);
+
+        db.close();
+    }
 }

@@ -6,9 +6,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.team21.questify.application.model.TaskOccurrence;
+import com.team21.questify.application.model.enums.TaskDifficulty;
+import com.team21.questify.application.model.enums.TaskPriority;
 import com.team21.questify.application.model.enums.TaskStatus;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,32 +55,6 @@ public class TaskOccurrenceLocalDataSource {
         db.close();
         return occurrences;
     }
-
-
-
-
-
-/*
-    public void updateTaskOccurrence(TaskOccurrence occurrence) {
-        SQLiteDatabase db = helper.getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        cv.put("task_id", occurrence.getTaskId());
-        cv.put("user_id", occurrence.getUserId());
-        cv.put("date", occurrence.getDate());
-        cv.put("status", occurrence.getStatus() != null ? occurrence.getStatus().name() : null);
-        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrence.getId()});
-        db.close();
-    }
-
-    public void deleteTaskOccurrence(String id) {
-        SQLiteDatabase db = helper.getWritableDatabase();
-        db.delete(DatabaseHelper.T_TASK_OCCURRENCES, "id = ?", new String[]{id});
-        db.close();
-    }
-*/
-
-
-
 
 
     private TaskOccurrence cursorToTaskOccurrence(Cursor c) {
@@ -159,4 +136,344 @@ public class TaskOccurrenceLocalDataSource {
             db.endTransaction();
         }
     }
+
+
+
+
+
+    public List<TaskOccurrence> getOccurrencesByTaskId(String taskId) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null,
+                "task_id = ?", new String[]{taskId},
+                null, null, "date ASC"); // Sortirano po datumu
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                occurrences.add(cursorToTaskOccurrence(c));
+            }
+            c.close();
+        }
+        db.close();
+        return occurrences;
+    }
+
+
+    public List<TaskOccurrence> findFutureOccurrences(String taskId, long fromDate) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+
+        String selection = "task_id = ? AND date >= ? AND (status IS NULL OR status != ?)";
+        String[] selectionArgs = {taskId, String.valueOf(fromDate), TaskStatus.COMPLETED.name()};
+
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null,
+                selection, selectionArgs,
+                null, null, "date ASC");
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                occurrences.add(cursorToTaskOccurrence(c));
+            }
+            c.close();
+        }
+        db.close();
+        return occurrences;
+    }
+
+
+
+    public void updateTaskOccurrence(TaskOccurrence occurrence) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        // Ne ažuriramo ID i user_id
+        cv.put("task_id", occurrence.getTaskId());
+        cv.put("date", occurrence.getDate());
+        cv.put("status", occurrence.getStatus() != null ? occurrence.getStatus().name() : null);
+        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrence.getId()});
+        db.close();
+    }
+
+
+    public void updateTaskOccurrenceTaskId(String occurrenceId, String newTaskId) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("task_id", newTaskId);
+        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrenceId});
+        db.close();
+    }
+
+
+    public void deleteTaskOccurrence(String id) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.delete(DatabaseHelper.T_TASK_OCCURRENCES, "id = ?", new String[]{id});
+        db.close();
+    }
+
+
+    public List<TaskOccurrence> getTodaysCompletedOccurrencesForUser(String userId) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+
+
+        Calendar calendar = Calendar.getInstance();
+
+
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long startOfDayMillis = calendar.getTimeInMillis();
+
+
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        long endOfDayMillis = calendar.getTimeInMillis();
+
+
+        String selection = "user_id = ? AND status = ? AND date >= ? AND date <= ?";
+        String[] selectionArgs = {
+                userId,
+                TaskStatus.COMPLETED.name(),
+                String.valueOf(startOfDayMillis),
+                String.valueOf(endOfDayMillis)
+        };
+
+
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES,
+                null,
+                selection,
+                selectionArgs,
+                null,
+                null,
+                "date ASC");
+
+
+        if (c != null) {
+            while (c.moveToNext()) {
+                occurrences.add(cursorToTaskOccurrence(c));
+            }
+            c.close();
+        }
+
+
+        db.close();
+        return occurrences;
+    }
+
+    public void updateOccurrenceStatus(String occurrenceId, TaskStatus status) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("status", status.name());
+        db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, "id = ?", new String[]{occurrenceId});
+        db.close();
+    }
+
+    public List<TaskOccurrence> getCompletedOccurrencesForDateRange(String userId, long fromDate, long toDate) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        String selection = "user_id = ? AND status = ? AND date >= ? AND date <= ?";
+        String[] selectionArgs = {userId, TaskStatus.COMPLETED.name(), String.valueOf(fromDate), String.valueOf(toDate)};
+        Cursor c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null, selection, selectionArgs, null, null, "date ASC");
+        if (c != null) {
+            while (c.moveToNext()) {
+                occurrences.add(cursorToTaskOccurrence(c));
+            }
+            c.close();
+        }
+        db.close();
+        return occurrences;
+    }
+
+    public int updateOldActiveOccurrencesToUncompleted() {
+        SQLiteDatabase db = helper.getWritableDatabase();
+
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -3);
+
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long threeDaysAgoMillis = calendar.getTimeInMillis();
+
+
+        ContentValues cv = new ContentValues();
+        cv.put("status", TaskStatus.UNCOMPLETED.name());
+
+
+        String whereClause = "status = ? AND date < ?";
+        String[] whereArgs = new String[]{
+                TaskStatus.ACTIVE.name(),
+                String.valueOf(threeDaysAgoMillis)
+        };
+
+
+        int rowsAffected = db.update(DatabaseHelper.T_TASK_OCCURRENCES, cv, whereClause, whereArgs);
+
+        db.close();
+        return rowsAffected;
+    }
+
+
+
+    // =================================================================
+    // NEW METHODS FOR XP QUOTA CHECKING
+    // =================================================================
+
+    public int getTodaysCompletedTaskCountByDifficulty(String userId, TaskDifficulty difficulty) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        int count = 0;
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long startOfDay = calendar.getTimeInMillis();
+
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        long endOfDay = calendar.getTimeInMillis();
+
+        String query = "SELECT COUNT(T1.id) FROM " + DatabaseHelper.T_TASK_OCCURRENCES + " T1" +
+                " JOIN " + DatabaseHelper.T_TASKS + " T2 ON T1.task_id = T2.id" +
+                " WHERE T1.user_id = ? AND T1.status = ? AND T2.task_difficulty = ?" +
+                " AND T1.date BETWEEN ? AND ?";
+
+        Cursor c = db.rawQuery(query, new String[]{
+                userId, TaskStatus.COMPLETED.name(), difficulty.name(), String.valueOf(startOfDay), String.valueOf(endOfDay)
+        });
+
+        if (c != null && c.moveToFirst()) {
+            count = c.getInt(0);
+            c.close();
+        }
+        db.close();
+        return count;
+    }
+
+
+    public int getTodaysCompletedTaskCountByPriority(String userId, TaskPriority priority) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        int count = 0;
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long startOfDay = calendar.getTimeInMillis();
+
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        long endOfDay = calendar.getTimeInMillis();
+
+        String query = "SELECT COUNT(T1.id) FROM " + DatabaseHelper.T_TASK_OCCURRENCES + " T1" +
+                " JOIN " + DatabaseHelper.T_TASKS + " T2 ON T1.task_id = T2.id" +
+                " WHERE T1.user_id = ? AND T1.status = ? AND T2.task_priority = ?" +
+                " AND T1.date BETWEEN ? AND ?";
+
+        Cursor c = db.rawQuery(query, new String[]{
+                userId, TaskStatus.COMPLETED.name(), priority.name(), String.valueOf(startOfDay), String.valueOf(endOfDay)
+        });
+
+        if (c != null && c.moveToFirst()) {
+            count = c.getInt(0);
+            c.close();
+        }
+        db.close();
+        return count;
+    }
+
+
+    public int getThisWeeksCompletedTaskCount(String userId, TaskDifficulty difficulty) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        int count = 0;
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long startOfWeek = calendar.getTimeInMillis();
+
+        calendar.add(Calendar.WEEK_OF_YEAR, 1);
+        calendar.add(Calendar.DAY_OF_WEEK, -1);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        long endOfWeek = calendar.getTimeInMillis();
+
+        String query = "SELECT COUNT(T1.id) FROM " + DatabaseHelper.T_TASK_OCCURRENCES + " T1" +
+                " JOIN " + DatabaseHelper.T_TASKS + " T2 ON T1.task_id = T2.id" +
+                " WHERE T1.user_id = ? AND T1.status = ? AND T2.task_difficulty = ?" +
+                " AND T1.date BETWEEN ? AND ?";
+
+        Cursor c = db.rawQuery(query, new String[]{
+                userId,
+                TaskStatus.COMPLETED.name(),
+                difficulty.name(),
+                String.valueOf(startOfWeek),
+                String.valueOf(endOfWeek)
+        });
+
+        if (c != null && c.moveToFirst()) {
+            count = c.getInt(0);
+            c.close();
+        }
+        db.close();
+        return count;
+    }
+
+
+    public int getThisMonthsCompletedTaskCount(String userId, TaskPriority priority) {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        int count = 0;
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        long startOfMonth = calendar.getTimeInMillis();
+
+        calendar.add(Calendar.MONTH, 1);
+        calendar.set(Calendar.DAY_OF_MONTH, 1);
+        calendar.add(Calendar.MILLISECOND, -1);
+        long endOfMonth = calendar.getTimeInMillis();
+
+        String query = "SELECT COUNT(T1.id) FROM " + DatabaseHelper.T_TASK_OCCURRENCES + " T1" +
+                " JOIN " + DatabaseHelper.T_TASKS + " T2 ON T1.task_id = T2.id" +
+                " WHERE T1.user_id = ? AND T1.status = ? AND T2.task_priority = ?" +
+                " AND T1.date BETWEEN ? AND ?";
+
+        Cursor c = db.rawQuery(query, new String[]{
+                userId,
+                TaskStatus.COMPLETED.name(),
+                priority.name(),
+                String.valueOf(startOfMonth),
+                String.valueOf(endOfMonth)
+        });
+
+        if (c != null && c.moveToFirst()) {
+            count = c.getInt(0);
+            c.close();
+        }
+        db.close();
+        return count;
+    }
+
+
+
+
 }

@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.team21.questify.R;
+import com.team21.questify.application.service.TaskOccurrenceService;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity {
     private UserService userService;
     private SharedPrefs sharedPreferences;
+    private TaskOccurrenceService taskOccurrenceService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
         userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
+        taskOccurrenceService = new TaskOccurrenceService(this);
         String userId = sharedPreferences.getUserUid();
         if (userId == null) {
             startActivity(new Intent(this, LoginActivity.class));
@@ -43,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         updateActiveDaysStreak(userId);
-
+        taskOccurrenceService.updateOldOccurrences();
         initViews();
     }
     private void updateActiveDaysStreak(String userId) {
@@ -68,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
         }).addOnFailureListener(e -> Log.e("MainActivity", "Failed to fetch user for streak update.", e));
     }
+
 
     private boolean isSameDay(Long timestamp1, Long timestamp2) {
         if (timestamp1 == null || timestamp2 == null) {
@@ -98,11 +102,7 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        Button btnCreateCategory = findViewById(R.id.btn_create_category);
-        btnCreateCategory.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateTaskCategoryActivity.class);
-            startActivity(intent);
-        });
+       
 
         findViewById(R.id.iv_calendar_icon).setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ViewTasksActivity.class);

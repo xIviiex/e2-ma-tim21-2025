@@ -59,6 +59,9 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
     private Map<Long, List<TaskOccurrence>> occurrencesByDay = new HashMap<>();
     private Map<String, Integer> categoryColorMap = new HashMap<>();
 
+
+
+
     public ViewTasksCalendarFragment() {
         // Required empty public constructor
     }
@@ -116,6 +119,11 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
     @Override
     public void onTaskClick(TaskOccurrence occurrence) {
         TaskDetailsDialogFragment dialogFragment = TaskDetailsDialogFragment.newInstance(occurrence);
+        dialogFragment.setOnTaskUpdatedListener(() -> {
+            // Reload occurrences i osveži kalendar
+            loadAllOccurrences();
+            Toast.makeText(getContext(), "Calendar refreshed", Toast.LENGTH_SHORT).show();
+        });
         dialogFragment.show(getParentFragmentManager(), "TaskDetailsDialog");
     }
 

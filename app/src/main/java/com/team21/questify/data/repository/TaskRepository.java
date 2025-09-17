@@ -119,4 +119,51 @@ public class TaskRepository {
         return localDataSource.getWeeklyXp(userId);
     }
 
+
+    private Map<String, Object> taskToMap(Task task) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("userId", task.getUserId());
+        map.put("name", task.getName());
+        map.put("description", task.getDescription());
+        map.put("taskCategoryId", task.getTaskCategoryId());
+        map.put("taskType", task.getTaskType().name());
+        map.put("recurrenceUnit", task.getRecurrenceUnit() != null ? task.getRecurrenceUnit().name() : null);
+        map.put("recurringInterval", task.getRecurringInterval());
+        map.put("recurringStartDate", task.getRecurringStartDate());
+        map.put("recurringEndDate", task.getRecurringEndDate());
+        map.put("executionTime", task.getExecutionTime());
+        map.put("taskDifficulty", task.getTaskDifficulty().name());
+        map.put("taskPriority", task.getTaskPriority().name());
+        map.put("xp", task.getXp());
+        return map;
+    }
+
+
+    public void updateTask(Task task, OnCompleteListener<Void> listener) {
+        // Konvertujemo Task u Map<String, Object> za Firestore update metodu
+        Map<String, Object> updates = taskToMap(task);
+
+        remoteDataSource.updateTask(task.getId(), updates, taskRemote -> {
+            if (taskRemote.isSuccessful()) {
+                // Ako je update na serveru uspeo, ažuriraj i lokalno
+                localDataSource.updateTask(task);
+            } else {
+                Log.e("TaskRepository", "Failed to update task on remote db: " + taskRemote.getException());
+            }
+            listener.onComplete(taskRemote);
+        });
+    }
+
+    public void updateTaskEndDate(String taskId, Long newEndDate, OnCompleteListener<Void> listener) {
+        remoteDataSource.updateTaskEndDate(taskId, newEndDate, taskRemote -> {
+            if (taskRemote.isSuccessful()) {
+                // Ako je update na serveru uspeo, ažuriraj i lokalno
+                localDataSource.updateTaskEndDate(taskId, newEndDate);
+            } else {
+                Log.e("TaskRepository", "Failed to update task end date on remote db: " + taskRemote.getException());
+            }
+            listener.onComplete(taskRemote);
+        });
+    }
+
 }
