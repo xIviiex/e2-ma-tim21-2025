@@ -53,4 +53,19 @@ public class LevelCalculator {
         return (int) Math.round(xp);
     }
 
+    public static int getCoinsForLevel(int level) {
+        if (level == 0) {
+            return 150;
+        }
+        switch (level) {
+            case 1:
+                return 200;
+            case 2:
+                return 240;
+            case 3:
+                return 288;
+            default:
+                return 0;
+        }
+    }
 }

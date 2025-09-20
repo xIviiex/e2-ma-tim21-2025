@@ -16,18 +16,27 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.Group;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.zxing.BarcodeFormat;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.team21.questify.R;
+import com.team21.questify.application.model.Equipment;
 import com.team21.questify.application.model.User;
+import com.team21.questify.application.model.enums.EquipmentType;
+import com.team21.questify.application.service.EquipmentService;
+import com.team21.questify.application.service.ShopActivity;
 import com.team21.questify.application.service.UserService;
+import com.team21.questify.presentation.adapter.EquipmentAdapter;
 import com.team21.questify.utils.SharedPrefs;
 import com.team21.questify.utils.LevelCalculator;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -40,6 +49,12 @@ public class ProfileActivity extends AppCompatActivity {
     private String currentUserId;
     private UserService userService;
     private SharedPrefs sharedPreferences;
+    private EquipmentService equipmentService;
+    private RecyclerView rvWeapons, rvArmor, rvPotions;
+    private EquipmentAdapter weaponsAdapter, armorAdapter, potionsAdapter;
+    private TextView tvWeaponsTitle, tvArmorTitle, tvPotionsTitle, tvNoEquipment;
+    private ImageView ivShopIcon;
+    private Button btnManageEquipment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +66,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
+        equipmentService = new EquipmentService(this);
 
         currentUserId = sharedPreferences.getUserUid();
         profileUserId = getIntent().getStringExtra("user_id");
@@ -61,7 +77,15 @@ public class ProfileActivity extends AppCompatActivity {
         isMyProfile = Objects.equals(currentUserId, profileUserId);
 
         setupProfileVisibility();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         loadUserProfile(profileUserId);
+        if (equipmentService != null) {
+            loadUserInventory(profileUserId);
+        }
     }
 
     private void initViews() {
@@ -77,10 +101,38 @@ public class ProfileActivity extends AppCompatActivity {
         btnChangePassword = findViewById(R.id.btn_change_password);
         pbXpProgress = findViewById(R.id.pb_xp_progress);
         tvXpDetails = findViewById(R.id.tv_xp_details);
+        tvNoEquipment = findViewById(R.id.tv_no_equipment);
+        tvWeaponsTitle = findViewById(R.id.tv_weapons_title);
+        rvWeapons = findViewById(R.id.rv_weapons);
+        tvArmorTitle = findViewById(R.id.tv_armor_title);
+        rvArmor = findViewById(R.id.rv_armor);
+        tvPotionsTitle = findViewById(R.id.tv_potions_title);
+        rvPotions = findViewById(R.id.rv_potions);
+        ivShopIcon = findViewById(R.id.iv_shop_icon);btnManageEquipment = findViewById(R.id.btn_manage_equipment);
 
+        weaponsAdapter = new EquipmentAdapter();
+        rvWeapons.setLayoutManager(new LinearLayoutManager(this));
+        rvWeapons.setAdapter(weaponsAdapter);
+
+        armorAdapter = new EquipmentAdapter();
+        rvArmor.setLayoutManager(new LinearLayoutManager(this));
+        rvArmor.setAdapter(armorAdapter);
+
+        potionsAdapter = new EquipmentAdapter();
+        rvPotions.setLayoutManager(new LinearLayoutManager(this));
+        rvPotions.setAdapter(potionsAdapter);
+
+        ivShopIcon.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, ShopActivity.class);
+            startActivity(intent);
+        });
         btnChangePassword.setOnClickListener(v -> showChangePasswordDialog());
         ivQrCode.setOnClickListener(v -> showQrCodeDialog());
         btnAddFriend.setOnClickListener(v -> addRemoveFriend());
+        btnManageEquipment.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, InventoryActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void setupToolbar() {
@@ -97,6 +149,8 @@ public class ProfileActivity extends AppCompatActivity {
         tvPowerPoints.setVisibility(myProfileVisibility);
         tvCoins.setVisibility(myProfileVisibility);
         btnChangePassword.setVisibility(myProfileVisibility);
+        ivShopIcon.setVisibility(myProfileVisibility);
+        btnManageEquipment.setVisibility(myProfileVisibility);
 
         if (getSupportActionBar() != null) {
             String title = getString(isMyProfile ? R.string.my_profile : R.string.user_profile);
@@ -158,6 +212,57 @@ public class ProfileActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+    private void loadUserInventory(String userId) {
+        if (!isMyProfile) {
+            equipmentService.getActiveInventory(userId).addOnSuccessListener(this::displayInventory);
+            return;
+        }
+
+        equipmentService.getInventory(userId).addOnSuccessListener(this::displayInventory)
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load inventory.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void displayInventory(List<Equipment> inventory) {
+        if (inventory.isEmpty()) {
+            tvNoEquipment.setVisibility(View.VISIBLE);
+            tvWeaponsTitle.setVisibility(View.GONE);
+            rvWeapons.setVisibility(View.GONE);
+            tvArmorTitle.setVisibility(View.GONE);
+            rvArmor.setVisibility(View.GONE);
+            tvPotionsTitle.setVisibility(View.GONE);
+            rvPotions.setVisibility(View.GONE);
+
+            if (btnManageEquipment != null) {
+                btnManageEquipment.setVisibility(View.GONE);
+            }
+            return;
+        }
+
+        tvNoEquipment.setVisibility(View.GONE);
+
+        List<Equipment> weapons = inventory.stream()
+                .filter(i -> i.getType() == EquipmentType.WEAPON)
+                .collect(Collectors.toList());
+        weaponsAdapter.setItems(weapons);
+        tvWeaponsTitle.setVisibility(weapons.isEmpty() ? View.GONE : View.VISIBLE);
+        rvWeapons.setVisibility(weapons.isEmpty() ? View.GONE : View.VISIBLE);
+
+        List<Equipment> armor = inventory.stream()
+                .filter(i -> i.getType() == EquipmentType.ARMOR)
+                .collect(Collectors.toList());
+        armorAdapter.setItems(armor);
+        tvArmorTitle.setVisibility(armor.isEmpty() ? View.GONE : View.VISIBLE);
+        rvArmor.setVisibility(armor.isEmpty() ? View.GONE : View.VISIBLE);
+
+        List<Equipment> potions = inventory.stream()
+                .filter(i -> i.getType() == EquipmentType.POTION)
+                .collect(Collectors.toList());
+        potionsAdapter.setItems(potions);
+        tvPotionsTitle.setVisibility(potions.isEmpty() ? View.GONE : View.VISIBLE);
+        rvPotions.setVisibility(potions.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private void addRemoveFriend() {

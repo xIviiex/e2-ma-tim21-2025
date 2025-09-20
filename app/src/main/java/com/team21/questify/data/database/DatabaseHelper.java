@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 7;
+    public static final int DB_VERSION = 8;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
     public static final String T_TASKS = "tasks";
@@ -14,6 +14,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String T_ALLIANCES = "alliances";
     public static final String T_INVITATIONS = "invitations";
     public static final String T_MESSAGES = "messages";
+    public static final String T_INVENTORY = "inventory";
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -112,6 +113,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                 ")");
 
+        db.execSQL("CREATE TABLE " + T_INVENTORY + " (" +
+                "inventory_id TEXT PRIMARY KEY," +
+                "user_id TEXT NOT NULL," +
+                "equipment_id TEXT NOT NULL," +
+                "type TEXT NOT NULL," +
+                "is_active INTEGER NOT NULL DEFAULT 0," +
+                "uses_left INTEGER NOT NULL," +
+                "current_bonus REAL NOT NULL," +
+                "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
+
     }
 
     @Override
@@ -203,6 +215,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     "timestamp INTEGER NOT NULL," +
                     "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE," +
                     "FOREIGN KEY(sender_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                    ")");
+        }
+        if (oldVersion < 8 ) {
+            db.execSQL("CREATE TABLE " + T_INVENTORY + " (" +
+                    "inventory_id TEXT PRIMARY KEY," +
+                    "user_id TEXT NOT NULL," +
+                    "equipment_id TEXT NOT NULL," +
+                    "type TEXT NOT NULL," +
+                    "is_active INTEGER NOT NULL DEFAULT 0," +
+                    "uses_left INTEGER NOT NULL," +
+                    "current_bonus REAL NOT NULL," +
+                    "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                     ")");
         }
     }

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".presentation.activity.InventoryActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar_inventory"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        app:title="Inventory &amp; Equipment"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tv_inventory_weapons_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Weapons"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_inventory_weapons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/tv_inventory_armor_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Armor"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_inventory_armor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/tv_inventory_potions_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Potions"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"/>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_inventory_potions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
