@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.team21.questify.R;
 import com.team21.questify.application.model.Equipment;
+import com.team21.questify.application.model.enums.EquipmentType;
 import com.team21.questify.utils.EquipmentHelper;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
 
     public interface OnItemActionClickListener {
         void onActionClick(Equipment item);
+        void onUpgradeClick(Equipment item);
     }
 
     private final List<Equipment> items = new ArrayList<>();
@@ -56,7 +58,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
     static class InventoryViewHolder extends RecyclerView.ViewHolder {
         ImageView icon;
         TextView name, bonus;
-        Button actionButton;
+        Button actionButton, upgradeButton;
 
         public InventoryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -64,6 +66,7 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
             name = itemView.findViewById(R.id.tv_equipment_name);
             bonus = itemView.findViewById(R.id.tv_equipment_bonus);
             actionButton = itemView.findViewById(R.id.btn_action);
+            upgradeButton = itemView.findViewById(R.id.btn_upgrade);
         }
 
         void bind(Equipment item, OnItemActionClickListener listener) {
@@ -89,6 +92,15 @@ public class InventoryAdapter extends RecyclerView.Adapter<InventoryAdapter.Inve
                     listener.onActionClick(item);
                 }
             });
+
+            if (item.getType() == EquipmentType.WEAPON) {
+                upgradeButton.setVisibility(View.VISIBLE);
+                upgradeButton.setOnClickListener(v -> {
+                    if (listener != null) listener.onUpgradeClick(item);
+                });
+            } else {
+                upgradeButton.setVisibility(View.GONE);
+            }
         }
     }
 }

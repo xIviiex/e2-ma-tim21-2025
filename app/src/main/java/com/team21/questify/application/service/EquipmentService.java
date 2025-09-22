@@ -78,6 +78,41 @@ public class EquipmentService {
         });
     }
 
+    public Task<Void> upgradeWeapon(String userId, Equipment weapon) {
+        if (weapon.getType() != EquipmentType.WEAPON) {
+            return Tasks.forException(new IllegalArgumentException("Only weapons can be upgraded."));
+        }
+
+        return userRepository.getUserById(userId).continueWithTask(userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                throw new Exception("User not found.");
+            }
+            User user = userTask.getResult();
+
+            int upgradeCost = calculateUpdatePrice(user.getLevel());
+
+            if (user.getCoins() < upgradeCost) {
+                throw new Exception("Not enough coins to upgrade! Cost: " + upgradeCost);
+            }
+
+            user.setCoins(user.getCoins() - upgradeCost);
+
+            return userRepository.updateUser(user).continueWithTask(updateUserTask -> {
+                if (!updateUserTask.isSuccessful()) {
+                    throw updateUserTask.getException();
+                }
+
+                weapon.setCurrentBonus(weapon.getCurrentBonus() + 0.0001); // 0.01%
+
+                return equipmentRepository.updateItem(weapon);
+            });
+        });
+    }
+
+    public int calculateUpdatePrice(int level) {
+        return (int)(LevelCalculator.getCoinsForLevel(level - 1) * 0.6);
+    }
+
     private Equipment createEquipmentFromShopItem(String userId, EquipmentHelper.ShopItem shopItem) {
         int uses = 0;
         double baseBonus = 0;
