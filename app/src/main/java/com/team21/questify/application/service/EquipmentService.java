@@ -8,6 +8,7 @@ import android.content.Context;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.team21.questify.application.model.BattleStats;
 import com.team21.questify.application.model.Equipment;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.EquipmentId;
@@ -20,6 +21,7 @@ import com.team21.questify.utils.LevelCalculator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 public class EquipmentService {
@@ -170,7 +172,7 @@ public class EquipmentService {
     }
 
     // logic for boss battle:
-    // metoda kada korisnik iskoristi akriviranu opremu u borbi sa bosom
+    // metoda kada korisnik iskoristi akriviranu opremu u borbi sa bosom - NAKON BORBE
     public Task<Void> processEquipmentAfterBossBattle(String userId) {
         return equipmentRepository.getInventory(userId).continueWithTask(task -> {
             if (!task.isSuccessful()) throw task.getException();
@@ -231,6 +233,42 @@ public class EquipmentService {
             }
 
             return Tasks.forResult(null);
+        });
+    }
+
+    // racuna bonuse koje nudi oprema i pozovi je PRE borbe, a onda menjaj u zavisnosti od toka borbe polja od
+    // BattleStatsa (smanjuj, povecavaj)
+    public Task<BattleStats> calculateBattleStats(String userId) {
+        return getActiveInventory(userId).continueWith(task -> {
+            if (!task.isSuccessful()) {
+                throw task.getException();
+            }
+            List<Equipment> activeEquipment = task.getResult();
+            BattleStats stats = new BattleStats();
+
+            for (Equipment item : activeEquipment) {
+                switch (item.getEquipmentId()) {
+                    case POTION_PP_PERMANENT_5:
+                    case POTION_PP_PERMANENT_10:
+                    case ARMOR_GLOVES:
+                    case WEAPON_SWORD:
+                    case POTION_PP_20:
+                    case POTION_PP_40:
+                        stats.addPowerPointsBonus(item.getCurrentBonus());
+                        break;
+                    case ARMOR_SHIELD:
+                        stats.setHitChanceBonus(stats.getHitChanceBonus() + item.getCurrentBonus());
+                        break;
+                    case ARMOR_BOOTS:
+                        stats.setExtraAttackChance(stats.getExtraAttackChance() + item.getCurrentBonus());
+                        break;
+                    case WEAPON_BOW:
+                        stats.addCoinsBonus(item.getCurrentBonus());
+                        break;
+                }
+            }
+
+            return stats;
         });
     }
 }

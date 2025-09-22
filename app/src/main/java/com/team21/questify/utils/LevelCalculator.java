@@ -19,15 +19,15 @@ public class LevelCalculator {
         return (int) (Math.ceil(newXp / 100) * 100);
     }
 
-    public static int getPowerPointsForLevel(int nextLevel) {
-        if (nextLevel < 2) {
+    public static int getPowerPointsForLevel(int reachedLevel) {
+        if (reachedLevel < 2) {
             return 0;
         }
-        if (nextLevel == 2) {
+        if (reachedLevel == 2) {
             return 40;
         }
 
-        int previousLevelPp = getPowerPointsForLevel(nextLevel - 1);
+        int previousLevelPp = getPowerPointsForLevel(reachedLevel - 1);
         double newPp = previousLevelPp + (0.75 * previousLevelPp);
         return (int) Math.round(newPp);
     }
@@ -54,18 +54,13 @@ public class LevelCalculator {
     }
 
     public static int getCoinsForLevel(int level) {
-        if (level == 0) {
-            return 150;
+        if (level < 1) return 150;
+        if (level == 1) return 200;
+
+        double reward = 200;
+        for (int i = 2; i <= level; i++) {
+            reward *= 1.20;
         }
-        switch (level) {
-            case 1:
-                return 200;
-            case 2:
-                return 240;
-            case 3:
-                return 288;
-            default:
-                return 0;
-        }
+        return (int) Math.round(reward);
     }
 }
