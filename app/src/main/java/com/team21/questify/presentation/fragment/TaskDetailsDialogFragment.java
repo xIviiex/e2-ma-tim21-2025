@@ -63,6 +63,10 @@ public class TaskDetailsDialogFragment extends DialogFragment {
         void onTaskUpdated();
     }
 
+    private interface OnXpProcessCompleteListener {
+        void onProcessComplete();
+    }
+
     public void setOnTaskUpdatedListener(OnTaskUpdatedListener listener) {
         this.listener = listener;
     }
@@ -280,35 +284,35 @@ public class TaskDetailsDialogFragment extends DialogFragment {
         final TaskStatus oldStatus = taskOccurrence.getStatus();
 
         taskOccurrenceService.updateOccurrenceStatus(taskOccurrence.getId(), newStatus, updateTask -> {
-            if (updateTask.isSuccessful()) {
-                Toast.makeText(getContext(), "Status updated to " + newStatus.name(), Toast.LENGTH_SHORT).show();
-                taskOccurrence.setStatus(newStatus);
-                updateStatusUI();
+            // ODMAH prebacite SVE na UI nit da biste bili sigurni
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                if (updateTask.isSuccessful()) {
+                    Toast.makeText(getContext(), "Status updated to " + newStatus.name(), Toast.LENGTH_SHORT).show();
+                    taskOccurrence.setStatus(newStatus);
+                    updateStatusUI();
 
-                boolean isBulkOperationPending = false;
+                    // Definišemo šta treba uraditi kada se SVE završi
+                    OnXpProcessCompleteListener completionAction = () -> {
+                        if (listener != null) {
+                            listener.onTaskUpdated();
+                        }
+                    };
 
-                if (newStatus == TaskStatus.COMPLETED) {
-                    handleXpAwarding();
+                    if (newStatus == TaskStatus.COMPLETED) {
+                        handleXpAwarding(completionAction);
+                    } else if (newStatus == TaskStatus.PAUSED) {
+                        pauseAllFutureOccurrences(); // Ova metoda mora interno da osveži UI
+                    } else if (oldStatus == TaskStatus.PAUSED && newStatus == TaskStatus.ACTIVE) {
+                        reactivateAllFutureOccurrences(); // I ova metoda
+                    } else {
+                        // Ako nema drugih asinhronih operacija, osveži odmah
+                        completionAction.onProcessComplete();
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Error updating status: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                 }
-
-                if (newStatus == TaskStatus.PAUSED) {
-                    isBulkOperationPending = true;
-                    pauseAllFutureOccurrences();
-                }
-
-                if (oldStatus == TaskStatus.PAUSED && newStatus == TaskStatus.ACTIVE) {
-                    isBulkOperationPending = true;
-                    reactivateAllFutureOccurrences();
-                }
-
-
-                if (!isBulkOperationPending && listener != null) {
-                    listener.onTaskUpdated();
-                }
-
-            } else {
-                Toast.makeText(getContext(), "Error updating status: " + updateTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
-            }
+            });
         });
     }
 
@@ -394,26 +398,21 @@ public class TaskDetailsDialogFragment extends DialogFragment {
     }
 
 
-    private void handleXpAwarding() {
+    private void handleXpAwarding(OnXpProcessCompleteListener finalCallback) {
         if (task == null || auth.getCurrentUser() == null || currentUser == null) {
-            Log.e("handleXpAwarding", "Data ain't ready.");
+            finalCallback.onProcessComplete();
             return;
         }
 
-
         checkPriorityQuota(task.getTaskPriority(), priorityXp -> {
-
             checkDifficultyQuota(task.getTaskDifficulty(), difficultyXp -> {
                 int totalXpToAward = priorityXp + difficultyXp;
-
                 if (totalXpToAward > 0) {
-                    if (isAdded()) {
-                        awardXp(auth.getCurrentUser().getUid(), totalXpToAward);
-                    }
+                    awardXp(auth.getCurrentUser().getUid(), totalXpToAward, finalCallback);
                 } else {
-                    if (isAdded()) {
-                        Toast.makeText(getContext(), "All xp for this task is filled.", Toast.LENGTH_LONG).show();
-                    }
+                    // Ako su obe kvote ispunjene, prikaži poruku i onda završi
+                    Toast.makeText(getContext(), "All XP quotas for this task are met.", Toast.LENGTH_LONG).show();
+                    finalCallback.onProcessComplete();
                 }
             });
         });
@@ -425,7 +424,7 @@ public class TaskDetailsDialogFragment extends DialogFragment {
 
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
-                    if (monthlyCountTask.isSuccessful() && monthlyCountTask.getResult() != null && monthlyCountTask.getResult() < 1) {
+                    if (monthlyCountTask.isSuccessful() && monthlyCountTask.getResult() != null && monthlyCountTask.getResult() <= 1) {
                         callback.onXpCalculated(LevelCalculator.getXpForDifficultyOrPriority(currentUser.getLevel(), task.getTaskPriority().getXp()));
                     } else {
                         if (!monthlyCountTask.isSuccessful()) Log.e("checkPriorityQuota", "Error", monthlyCountTask.getException());
@@ -473,7 +472,7 @@ public class TaskDetailsDialogFragment extends DialogFragment {
 
                 if (getActivity() == null) return;
                 getActivity().runOnUiThread(() -> {
-                    if (weeklyCountTask.isSuccessful() && weeklyCountTask.getResult() != null && weeklyCountTask.getResult() < 1) {
+                    if (weeklyCountTask.isSuccessful() && weeklyCountTask.getResult() != null && weeklyCountTask.getResult() <= 1) {
                         callback.onXpCalculated(LevelCalculator.getXpForDifficultyOrPriority(currentUser.getLevel(), task.getTaskDifficulty().getXp()));
                     } else {
                         if (!weeklyCountTask.isSuccessful()) Log.e("checkDifficultyQuota", "Error", weeklyCountTask.getException());
@@ -517,7 +516,7 @@ public class TaskDetailsDialogFragment extends DialogFragment {
     }
 
 
-    private void awardXp(String userId, int xpToAdd) {
+    private void awardXp(String userId, int xpToAdd, OnXpProcessCompleteListener finalCallback) {
         userService.addXpAndCheckLevelUp(userId, xpToAdd).addOnCompleteListener(levelUpTask -> {
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
@@ -526,7 +525,12 @@ public class TaskDetailsDialogFragment extends DialogFragment {
                     } else {
                         Toast.makeText(getContext(), "Error adding XP: " + levelUpTask.getException().getMessage(), Toast.LENGTH_SHORT).show();
                     }
+                    // Pozovi callback NAKON što je Toast prikazan
+                    finalCallback.onProcessComplete();
                 });
+            } else {
+                // Ako je Activity nestao, ipak pozovi callback da se proces formalno završi
+                finalCallback.onProcessComplete();
             }
         });
     }

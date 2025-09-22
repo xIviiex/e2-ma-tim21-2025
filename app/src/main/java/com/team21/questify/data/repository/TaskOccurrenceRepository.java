@@ -310,11 +310,14 @@ public class TaskOccurrenceRepository {
     public void getTodaysCompletedTaskCountByPriority(String userId, TaskPriority priority, OnCompleteListener<Integer> listener) {
         remoteDataSource.getTodaysCompletedTaskCountByPriority(userId, priority, remoteTask -> {
             if (remoteTask.isSuccessful() && remoteTask.getResult() != null) {
-                listener.onComplete(Tasks.forResult(remoteTask.getResult().size()));
+                int count = remoteTask.getResult().size();
+                Log.d("QuotaCheck", "Firestore SUCCESS. Count for " + priority.name() + " is: " + count);
+                listener.onComplete(Tasks.forResult(count));
             } else {
-                Log.w("TaskOccurrenceRepo", "Remote fetch failed. Falling back to local.", remoteTask.getException());
+                Log.e("QuotaCheck", "Firestore FAILED. Reason: " + remoteTask.getException());
                 executor.execute(() -> {
                     int localCount = localDataSource.getTodaysCompletedTaskCountByPriority(userId, priority);
+                    Log.d("QuotaCheck", "Fallback to LOCAL DB. Count for " + priority.name() + " is: " + localCount);
                     listener.onComplete(Tasks.forResult(localCount));
                 });
             }
