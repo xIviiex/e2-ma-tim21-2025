@@ -16,7 +16,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.constraintlayout.widget.Group;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -25,7 +24,6 @@ import com.google.zxing.BarcodeFormat;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.team21.questify.R;
 import com.team21.questify.application.model.Equipment;
-import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.EquipmentType;
 import com.team21.questify.application.service.EquipmentService;
 import com.team21.questify.application.service.ShopActivity;

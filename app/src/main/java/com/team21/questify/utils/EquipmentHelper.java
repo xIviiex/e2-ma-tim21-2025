@@ -7,6 +7,7 @@ import com.team21.questify.application.model.enums.EquipmentType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class EquipmentHelper {
     public static String getName(EquipmentId id) {
@@ -15,9 +16,9 @@ public class EquipmentHelper {
             case POTION_PP_40: return "Greater Potion of Power (+40%)";
             case POTION_PP_PERMANENT_5: return "Elixir of Strength (+5% perm.)";
             case POTION_PP_PERMANENT_10: return "Greater Elixir of Strength (+10% perm.)";
-            case ARMOR_GLOVES: return "Gloves of Power (+10% PP)";
-            case ARMOR_SHIELD: return "Shield of Accuracy (+10% hit chance)";
-            case ARMOR_BOOTS: return "Boots of Swiftness (+40% extra attack)";
+            case ARMOR_GLOVES: return "Gloves of Power";
+            case ARMOR_SHIELD: return "Shield of Accuracy";
+            case ARMOR_BOOTS: return "Boots of Swiftness";
             case WEAPON_SWORD: return "Sword of Power";
             case WEAPON_BOW: return "Bow of Greed";
             default: return "Unknown Item";
@@ -25,11 +26,20 @@ public class EquipmentHelper {
     }
 
     public static String getBonusText(Equipment item) {
+        double bonusPercent = item.getCurrentBonus() * 100;
+
         switch (item.getEquipmentId()) {
+            case ARMOR_GLOVES:
+                return String.format(Locale.getDefault(), "+%.0f%% Power", bonusPercent);
+            case ARMOR_SHIELD:
+                return String.format(Locale.getDefault(), "+%.0f%% Hit Chance", bonusPercent);
+            case ARMOR_BOOTS:
+                return String.format(Locale.getDefault(), "+%.0f%% Extra Attack", bonusPercent);
+
             case WEAPON_SWORD:
-                return String.format("+%.2f%% Permanent Power", item.getCurrentBonus() * 100);
+                return String.format(Locale.getDefault(), "+%.2f%% Permanent Power", bonusPercent);
             case WEAPON_BOW:
-                return String.format("+%.2f%% Permanent Coins", item.getCurrentBonus() * 100);
+                return String.format(Locale.getDefault(), "+%.2f%% Permanent Coins", bonusPercent);
             default:
                 return "";
         }
