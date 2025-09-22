@@ -2,6 +2,7 @@ package com.team21.questify.application.service;
 
 import static com.team21.questify.application.model.enums.EquipmentType.ARMOR;
 import static com.team21.questify.application.model.enums.EquipmentType.POTION;
+import static com.team21.questify.application.model.enums.EquipmentType.WEAPON;
 
 import android.content.Context;
 
@@ -16,7 +17,9 @@ import com.team21.questify.data.repository.UserRepository;
 import com.team21.questify.utils.EquipmentHelper;
 import com.team21.questify.utils.LevelCalculator;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class EquipmentService {
@@ -69,17 +72,19 @@ public class EquipmentService {
 
             user.setCoins(user.getCoins() - price);
 
-            Equipment newItem = createEquipmentFromShopItem(userId, shopItem);
+            Equipment newItem = createNewEquipmentFromId(userId, shopItem.equipmentId);
 
-            Task<Void> updateUserTask = userRepository.updateUser(user);
-            Task<Void> addItemTask = equipmentRepository.addItem(newItem);
-
-            return Tasks.whenAll(updateUserTask, addItemTask);
+            return userRepository.updateUser(user).continueWithTask(updateUserTask -> {
+                if (!updateUserTask.isSuccessful()) {
+                    throw Objects.requireNonNull(updateUserTask.getException());
+                }
+                return equipmentRepository.addItem(newItem);
+            });
         });
     }
 
     public Task<Void> upgradeWeapon(String userId, Equipment weapon) {
-        if (weapon.getType() != EquipmentType.WEAPON) {
+        if (weapon.getType() != WEAPON) {
             return Tasks.forException(new IllegalArgumentException("Only weapons can be upgraded."));
         }
 
@@ -113,26 +118,119 @@ public class EquipmentService {
         return (int)(LevelCalculator.getCoinsForLevel(level - 1) * 0.6);
     }
 
-    private Equipment createEquipmentFromShopItem(String userId, EquipmentHelper.ShopItem shopItem) {
-        int uses = 0;
-        double baseBonus = 0;
+    private Equipment createNewEquipmentFromId(String userId, EquipmentId id) {
+        EquipmentType type;
+        int uses;
+        double baseBonus = getBaseBonusForItem(id);
 
-        switch (shopItem.type) {
-            case POTION:
-                uses = 1;
-                if (shopItem.equipmentId == EquipmentId.POTION_PP_20) baseBonus = 0.20;
-                if (shopItem.equipmentId == EquipmentId.POTION_PP_40) baseBonus = 0.40;
-                if (shopItem.equipmentId == EquipmentId.POTION_PP_PERMANENT_5) baseBonus = 0.05;
-                if (shopItem.equipmentId == EquipmentId.POTION_PP_PERMANENT_10) baseBonus = 0.10;
-                break;
-            case ARMOR:
+        switch (id) {
+            case ARMOR_GLOVES:
+            case ARMOR_SHIELD:
+            case ARMOR_BOOTS:
+                type = EquipmentType.ARMOR;
                 uses = 2;
-                if (shopItem.equipmentId == EquipmentId.ARMOR_GLOVES) baseBonus = 0.10;
-                if (shopItem.equipmentId == EquipmentId.ARMOR_SHIELD) baseBonus = 0.10;
-                if (shopItem.equipmentId == EquipmentId.ARMOR_BOOTS) baseBonus = 0.40;
                 break;
+            case WEAPON_SWORD:
+            case WEAPON_BOW:
+                type = EquipmentType.WEAPON;
+                uses = -1;
+                break;
+            case POTION_PP_20:
+            case POTION_PP_40:
+                type = POTION;
+                uses = 1;
+                break;
+            case POTION_PP_PERMANENT_5:
+            case POTION_PP_PERMANENT_10:
+                type = POTION;
+                uses = -1;
+                break;
+            default:
+                return null;
         }
-        return new Equipment(userId, shopItem.equipmentId, shopItem.type, uses, baseBonus);
+        return new Equipment(userId, id, type, uses, baseBonus);
     }
 
+    private double getBaseBonusForItem(EquipmentId id) {
+        switch (id) {
+            case ARMOR_GLOVES:
+            case ARMOR_SHIELD:
+            case POTION_PP_PERMANENT_10:
+                return 0.10; // 10%
+            case ARMOR_BOOTS:
+            case POTION_PP_40:
+                return 0.40; // 40%
+            case WEAPON_BOW:
+            case WEAPON_SWORD:
+            case POTION_PP_PERMANENT_5:
+                return 0.05; // 5%
+            case POTION_PP_20: return 0.20; // 20%
+            default: return 0.0;
+        }
+    }
+
+    // logic for boss battle:
+    // metoda kada korisnik iskoristi akriviranu opremu u borbi sa bosom
+    public Task<Void> processEquipmentAfterBossBattle(String userId) {
+        return equipmentRepository.getInventory(userId).continueWithTask(task -> {
+            if (!task.isSuccessful()) throw task.getException();
+
+            List<Equipment> inventory = task.getResult();
+            List<Task<Void>> tasksToPerform = new ArrayList<>();
+
+            for (Equipment item : inventory) {
+                if (item.isActive()) {
+                    boolean isConsumable = item.getType() == EquipmentType.ARMOR ||
+                            item.getEquipmentId() == EquipmentId.POTION_PP_20 ||
+                            item.getEquipmentId() == EquipmentId.POTION_PP_40;
+                    if (isConsumable) {
+                        item.setUsesLeft(item.getUsesLeft() - 1);
+                        if (item.getUsesLeft() == 0) {
+                            tasksToPerform.add(equipmentRepository.deleteItem(userId, item.getInventoryId()));
+                        } else {
+                            tasksToPerform.add(equipmentRepository.updateItem(item));
+                        }
+                    }
+                }
+            }
+
+            return Tasks.whenAll(tasksToPerform);
+        });
+    }
+    // metoda kada korisnik nakon borbe dobija nagradu nakon spec misije ili borbe sa bossom - napravi u zavisnosti
+    // od toga za sta se poziva metoda listu sa mogucim nagradama (List<EquipmentId>) i metodi prosledi random vrednost
+    // iz te liste (na osnovu verovatnoca koje imas ili kako vec) one 4 vrednosti za napitke ako je spec misija ili za
+    // borbu sa bosom ona tri za odecu
+    public Task<Void> rewardEquipment(String userId, EquipmentId newItemId) {
+        return equipmentRepository.getInventory(userId).continueWithTask(task -> {
+            if (!task.isSuccessful()) throw task.getException();
+
+            List<Equipment> inventory = task.getResult();
+
+            Equipment existingItem = inventory.stream()
+                    .filter(it -> it.getEquipmentId() == newItemId)
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingItem != null) {
+                if (existingItem.getType() == EquipmentType.ARMOR) {
+                    double baseBonus = getBaseBonusForItem(newItemId);
+                    existingItem.setCurrentBonus(existingItem.getCurrentBonus() + baseBonus);
+                    existingItem.setUsesLeft(2);
+                    return equipmentRepository.updateItem(existingItem);
+                }
+                else if (existingItem.getType() == WEAPON) {
+                    existingItem.setCurrentBonus(existingItem.getCurrentBonus() + 0.0002);
+                    return equipmentRepository.updateItem(existingItem);
+                }
+            }
+
+            Equipment newItem = createNewEquipmentFromId(userId, newItemId);
+            if (newItem != null) {
+                return equipmentRepository.addItem(newItem);
+            }
+
+            return Tasks.forResult(null);
+        });
+    }
 }
