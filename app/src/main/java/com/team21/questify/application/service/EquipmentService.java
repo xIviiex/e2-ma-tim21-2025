@@ -198,8 +198,9 @@ public class EquipmentService {
         });
     }
     // metoda kada korisnik nakon borbe dobija nagradu nakon spec misije ili borbe sa bossom - napravi u zavisnosti
-    // od toga za sta se poziva metoda listu sa mogucim nagradama (List<EquipmentId>) i metodi prosledi random vrednost iz te liste
-    // one 4 vrednosti za napitke ako je spec misija ili za borbu sa bosom ona tri za odecu
+    // od toga za sta se poziva metoda listu sa mogucim nagradama (List<EquipmentId>) i metodi prosledi random vrednost
+    // iz te liste (na osnovu verovatnoca koje imas ili kako vec) one 4 vrednosti za napitke ako je spec misija ili za
+    // borbu sa bosom ona tri za odecu
     public Task<Void> rewardEquipment(String userId, EquipmentId newItemId) {
         return equipmentRepository.getInventory(userId).continueWithTask(task -> {
             if (!task.isSuccessful()) throw task.getException();
