@@ -7,6 +7,7 @@ import android.util.Pair;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.team21.questify.application.model.BattleStats;
 import com.team21.questify.data.firebase.UserRemoteDataSource;
 import com.team21.questify.utils.LevelCalculator;
 import com.google.firebase.auth.AuthCredential;
@@ -127,7 +128,8 @@ public class UserService {
                 user.setLevel(newLevel);
                 user.setXp(newXp - requiredXp);
                 user.setTitle(LevelCalculator.getTitleForLevel(newLevel));
-                user.setPowerPoints(user.getPowerPoints() + LevelCalculator.getPowerPointsForLevel(newLevel));
+                // this is probably not needed anymore, user is rewarded with pp after boss battle
+                // user.setPowerPoints(user.getPowerPoints() + LevelCalculator.getPowerPointsForLevel(newLevel));
                 Log.d("UserService", "User " + user.getUsername() + " leveled up to level " + newLevel);
             } else {
                 user.setXp(newXp);
@@ -188,6 +190,27 @@ public class UserService {
                 userList.add((User) obj);
             }
             return userList;
+        });
+    }
+
+    // ovo pozovi nakon borbe, smanji vrednosti mnozilaca u battle stats ako borba nije 100% uspesna pa ih onda prosledi
+    public Task<Void> addPPAndCoinsAfterBossBattle(String userId, BattleStats stats, boolean battleWon) {
+        return userRepository.getUserById(userId).continueWithTask(userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                throw new Exception("User not found to update stats.", userTask.getException());
+            }
+            User user = userTask.getResult();
+
+            if (battleWon) {
+                int coinReward = LevelCalculator.getCoinsForLevel(user.getLevel());
+                int finalCoinReward = (int) (coinReward * stats.getCoinsMultiplier());
+                user.setCoins(user.getCoins() + finalCoinReward);
+            }
+
+            int ppReward = LevelCalculator.getPowerPointsForLevel(user.getLevel());
+            user.setPowerPoints(user.getPowerPoints() + ppReward);
+
+            return userRepository.updateUser(user);
         });
     }
 }
