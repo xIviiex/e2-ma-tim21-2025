@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify">
         <activity
+            android:name=".presentation.activity.InventoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".application.service.ShopActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activity.TaskCategoryViewActivity"
             android:exported="false" />
         <activity
