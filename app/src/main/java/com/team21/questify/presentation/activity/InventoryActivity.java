@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
@@ -21,8 +22,11 @@ import com.team21.questify.R;
 import com.team21.questify.application.model.Equipment;
 import com.team21.questify.application.model.enums.EquipmentType;
 import com.team21.questify.application.service.EquipmentService;
+import com.team21.questify.application.service.UserService;
 import com.team21.questify.presentation.adapter.EquipmentAdapter;
 import com.team21.questify.presentation.adapter.InventoryAdapter;
+import com.team21.questify.utils.EquipmentHelper;
+import com.team21.questify.utils.LevelCalculator;
 import com.team21.questify.utils.SharedPrefs;
 
 import java.util.List;
@@ -31,6 +35,7 @@ import java.util.stream.Collectors;
 public class InventoryActivity extends AppCompatActivity {
 
     private EquipmentService equipmentService;
+    private UserService userService;
     private RecyclerView rvWeapons, rvArmor, rvPotions;
     private InventoryAdapter weaponsAdapter, armorAdapter, potionsAdapter;
     private SharedPrefs sharedPrefs;
@@ -58,6 +63,7 @@ public class InventoryActivity extends AppCompatActivity {
 
     private void initServicesAndViews() {
         equipmentService = new EquipmentService(this);
+        userService = new UserService(this);
         sharedPrefs = new SharedPrefs(this);
 
         rvWeapons = findViewById(R.id.rv_inventory_weapons);
@@ -70,7 +76,18 @@ public class InventoryActivity extends AppCompatActivity {
         tvPotionsTitle = findViewById(R.id.tv_inventory_potions_title);
         rvPotions = findViewById(R.id.rv_inventory_potions);
 
-        InventoryAdapter.OnItemActionClickListener listener = this::handleItemAction;
+        InventoryAdapter.OnItemActionClickListener listener = new InventoryAdapter.OnItemActionClickListener() {
+            @Override
+            public void onActionClick(Equipment item) {
+                handleItemAction(item);
+            }
+
+            @Override
+            public void onUpgradeClick(Equipment item) {
+                handleUpgradeAction(item);
+            }
+        };
+
         weaponsAdapter = new InventoryAdapter(listener);
         armorAdapter = new InventoryAdapter(listener);
         potionsAdapter = new InventoryAdapter(listener);
@@ -135,6 +152,31 @@ public class InventoryActivity extends AppCompatActivity {
         }).addOnFailureListener(e -> {
             Toast.makeText(this, "Failed to update status: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void handleUpgradeAction(Equipment weapon) {
+        String userId = sharedPrefs.getUserUid();
+        if (userId == null) return;
+
+        userService.fetchUserProfile(userId).addOnSuccessListener(user -> {
+            int upgradeCost = equipmentService.calculateUpdatePrice(user.getLevel());
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Upgrade Weapon")
+                    .setMessage("Upgrade " + EquipmentHelper.getName(weapon.getEquipmentId()) + " for " + upgradeCost + " coins?")
+                    .setPositiveButton("Upgrade", (dialog, which) -> {
+                        equipmentService.upgradeWeapon(userId, weapon)
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(this, "Weapon upgraded!", Toast.LENGTH_SHORT).show();
+                                    loadInventory();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(this, "Upgrade failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                });
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }).addOnFailureListener(e -> Toast.makeText(this, "Cannot fetch user data.", Toast.LENGTH_SHORT).show());
     }
 
     @Override
