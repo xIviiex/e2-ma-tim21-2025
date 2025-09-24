@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 10;
+    public static final int DB_VERSION = 11;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
     public static final String T_TASKS = "tasks";
@@ -16,6 +16,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String T_MESSAGES = "messages";
     public static final String T_INVENTORY = "inventory";
     public static final String T_BOSSES = "bosses";
+    public static final String T_SPECIAL_MISSIONS = "special_missions";
+    public static final String T_SPECIAL_MISSION_PROGRESS = "special_mission_progress";
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -134,6 +136,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "current_hp REAL NOT NULL, " +
                 "is_defeated INTEGER NOT NULL, " +
                 "level INTEGER NOT NULL, " +
+                "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
+
+        db.execSQL("CREATE TABLE " + T_SPECIAL_MISSIONS + " (" +
+                "mission_id TEXT PRIMARY KEY, " +
+                "alliance_id TEXT NOT NULL, " +
+                "status TEXT NOT NULL, " +
+                "initial_hp INTEGER NOT NULL, " +
+                "current_hp INTEGER NOT NULL, " +
+                "start_time INTEGER NOT NULL, " +
+                "end_time INTEGER NOT NULL, " +
+                "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE" +
+                ")");
+
+        db.execSQL("CREATE TABLE " + T_SPECIAL_MISSION_PROGRESS + " (" +
+                "mission_id TEXT NOT NULL, " +
+                "user_id TEXT NOT NULL, " +
+                "store_purchases INTEGER NOT NULL DEFAULT 0, " +
+                "successful_boss_hits INTEGER NOT NULL DEFAULT 0, " +
+                "solved_basic_tasks INTEGER NOT NULL DEFAULT 0, " +
+                "solved_other_tasks INTEGER NOT NULL DEFAULT 0, " +
+                "has_no_unsolved_tasks INTEGER NOT NULL DEFAULT 0, " +
+                "days_with_message_sent TEXT, " +
+                "earned_badges TEXT, " +
+                "total_damage_contributed INTEGER NOT NULL DEFAULT 0, " +
+                "PRIMARY KEY(mission_id, user_id), " +
+                "FOREIGN KEY(mission_id) REFERENCES " + T_SPECIAL_MISSIONS + "(mission_id) ON DELETE CASCADE, " +
                 "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                 ")");
 
@@ -256,6 +285,34 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 10) {
             db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN previous_level_up_timestamp INTEGER");
             db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN current_level_up_timestamp INTEGER");
+        }
+        if (oldVersion < 11) {
+            db.execSQL("CREATE TABLE " + T_SPECIAL_MISSIONS + " (" +
+                    "mission_id TEXT PRIMARY KEY, " +
+                    "alliance_id TEXT NOT NULL, " +
+                    "status TEXT NOT NULL, " +
+                    "initial_hp INTEGER NOT NULL, " +
+                    "current_hp INTEGER NOT NULL, " +
+                    "start_time INTEGER NOT NULL, " +
+                    "end_time INTEGER NOT NULL, " +
+                    "FOREIGN KEY(alliance_id) REFERENCES " + T_ALLIANCES + "(id) ON DELETE CASCADE" +
+                    ")");
+
+            db.execSQL("CREATE TABLE " + T_SPECIAL_MISSION_PROGRESS + " (" +
+                    "mission_id TEXT NOT NULL, " +
+                    "user_id TEXT NOT NULL, " +
+                    "store_purchases INTEGER NOT NULL DEFAULT 0, " +
+                    "successful_boss_hits INTEGER NOT NULL DEFAULT 0, " +
+                    "solved_basic_tasks INTEGER NOT NULL DEFAULT 0, " +
+                    "solved_other_tasks INTEGER NOT NULL DEFAULT 0, " +
+                    "has_no_unsolved_tasks INTEGER NOT NULL DEFAULT 0, " +
+                    "days_with_message_sent TEXT, " +
+                    "earned_badges TEXT, " +
+                    "total_damage_contributed INTEGER NOT NULL DEFAULT 0, " +
+                    "PRIMARY KEY(mission_id, user_id), " +
+                    "FOREIGN KEY(mission_id) REFERENCES " + T_SPECIAL_MISSIONS + "(mission_id) ON DELETE CASCADE, " +
+                    "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                    ")");
         }
     }
 

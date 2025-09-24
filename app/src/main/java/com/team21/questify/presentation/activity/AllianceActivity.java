@@ -24,6 +24,7 @@ import com.team21.questify.R;
 import com.team21.questify.application.model.Alliance;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.service.AllianceService;
+import com.team21.questify.application.service.SpecialMissionService;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.presentation.adapter.InviteFriendsAdapter;
 import com.team21.questify.presentation.adapter.UsersAdapter;
@@ -36,13 +37,14 @@ public class AllianceActivity extends AppCompatActivity {
     private static final String TAG = "AllianceActivity";
 
     private TextView tvLeaderInfo;
-    private Button btnInviteFriends, btnDisbandLeave;
+    private Button btnInviteFriends, btnDisbandLeave, btnSpecialMission;
     private RecyclerView rvMembers;
     private AllianceService allianceService;
     private UserService userService;
     private SharedPrefs sharedPrefs;
     private String allianceId;
     private Alliance currentAlliance;
+    private SpecialMissionService missionService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,12 +102,14 @@ public class AllianceActivity extends AppCompatActivity {
         userService = new UserService(this);
         allianceService = new AllianceService(this);
         sharedPrefs = new SharedPrefs(this);
+        missionService = new SpecialMissionService(this);
     }
 
     private void initViews() {
         tvLeaderInfo = findViewById(R.id.tv_leader_info);
         btnInviteFriends = findViewById(R.id.btn_invite_friends);
         btnDisbandLeave = findViewById(R.id.btn_disband_leave_alliance);
+        btnSpecialMission = findViewById(R.id.btn_special_mission);
         rvMembers = findViewById(R.id.rv_alliance_members);
         rvMembers.setLayoutManager(new LinearLayoutManager(this));
     }
@@ -113,6 +117,7 @@ public class AllianceActivity extends AppCompatActivity {
     private void setupListeners() {
         btnInviteFriends.setOnClickListener(v -> showInviteFriendsDialog());
         btnDisbandLeave.setOnClickListener(v -> handleDisbandOrLeave());
+        btnSpecialMission.setOnClickListener(v -> startSpecialMission());
     }
 
     private void loadAllianceDetails(String id) {
@@ -281,6 +286,25 @@ public class AllianceActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to leave: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     btnDisbandLeave.setEnabled(true);
                 });
+    }
+
+    private void startSpecialMission() {
+        btnSpecialMission.setEnabled(false); // Disable button to prevent multiple clicks
+        missionService.startMissionForAlliance(allianceId, task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(this, "Boss fight has started!", Toast.LENGTH_SHORT).show();
+                // TODO: Navigate to the mission screen or update UI accordingly
+            } else {
+                Exception e = task.getException();
+                String errorMessage = "Failed to start boss fight.";
+                if (e != null && e.getMessage() != null) {
+                    errorMessage += "\n" + e.getMessage();
+                }
+                Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                Log.e(TAG, "startSpecialMission failed", e);
+            }
+            btnSpecialMission.setEnabled(true); // Re-enable button
+        });
     }
 
 }

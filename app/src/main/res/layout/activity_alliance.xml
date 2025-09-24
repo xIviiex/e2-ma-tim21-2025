@@ -45,19 +45,31 @@
         android:layout_weight="1"
         tools:listitem="@layout/item_user_list"/>
 
-    <Button
-        android:id="@+id/btn_invite_friends"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Invite Friends"/>
+        <Button
+            android:id="@+id/btn_invite_friends"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Invite Friends"/>
 
-    <Button
-        android:id="@+id/btn_disband_leave_alliance"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Leave Alliance"/>
+        <!-- NOVO DUGME -->
+        <Button
+            android:id="@+id/btn_special_mission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Boss Fight"/>
+
+        <!-- Postojeće dugme -->
+        <Button
+            android:id="@+id/btn_disband_leave_alliance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Leave Alliance"/>
+
+
 
     </LinearLayout>
+
 
 </LinearLayout>
