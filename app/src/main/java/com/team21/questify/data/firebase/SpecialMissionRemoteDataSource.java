@@ -29,7 +29,6 @@ public class SpecialMissionRemoteDataSource {
 
 
     public Task<QuerySnapshot> getActiveMissionForAlliance(String allianceId) {
-
         return getMissionsCollection()
                 .whereEqualTo("allianceId", allianceId)
                 .whereEqualTo("missionStatus", MissionStatus.STARTED.name())
