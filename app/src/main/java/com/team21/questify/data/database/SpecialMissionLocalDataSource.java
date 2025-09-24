@@ -58,7 +58,12 @@ public class SpecialMissionLocalDataSource {
 
         try {
 
-            missionCursor = db.query(DatabaseHelper.T_SPECIAL_MISSIONS, null, "alliance_id = ?", new String[]{allianceId}, null, null, null, "1");
+            String selection = "alliance_id = ? AND status = ?";
+            String[] selectionArgs = new String[]{allianceId, MissionStatus.STARTED.name()};
+
+
+            missionCursor = db.query(DatabaseHelper.T_SPECIAL_MISSIONS, null, selection, selectionArgs, null, null, null, "1");
+
             if (missionCursor.moveToFirst()) {
                 mission = cursorToSpecialMission(missionCursor);
             }
@@ -69,7 +74,6 @@ public class SpecialMissionLocalDataSource {
         if (mission == null) {
             return null;
         }
-
 
         Map<String, SpecialMissionUser> progressMap = getProgressForMission(mission.getMissionId());
         mission.setParticipantsProgress(progressMap);
