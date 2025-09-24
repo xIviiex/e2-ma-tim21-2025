@@ -21,8 +21,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.team21.questify.R;
 import com.team21.questify.application.model.ChatMessage;
+import com.team21.questify.application.model.enums.MissionActionType;
 import com.team21.questify.application.service.AllianceService;
 import com.team21.questify.application.service.ChatService;
+import com.team21.questify.application.service.SpecialMissionService;
 import com.team21.questify.presentation.adapter.ChatAdapter;
 import com.team21.questify.utils.SharedPrefs;
 
@@ -43,6 +45,7 @@ public class ChatActivity extends AppCompatActivity {
     private String allianceId;
     private String currentUserId;
     private String currentUsername;
+    private SpecialMissionService missionService;
 
     private ListenerRegistration messagesListenerRegistration;
 
@@ -76,6 +79,7 @@ public class ChatActivity extends AppCompatActivity {
         sharedPrefs = new SharedPrefs(this);
         currentUserId = sharedPrefs.getUserUid();
         currentUsername = sharedPrefs.getUsername();
+        missionService = new SpecialMissionService(this);
     }
 
     private void initViews() {
@@ -125,7 +129,7 @@ public class ChatActivity extends AppCompatActivity {
         chatService.sendMessage(message)
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Message sent successfully.");
-
+                    recordAllianceMessageSent();
                     allianceService.sendChatMessageNotification(message)
                             .addOnSuccessListener(task -> Log.d(TAG, "Chat notification trigger succeeded."))
                             .addOnFailureListener(e -> Log.e(TAG, "Chat notification trigger failed.", e));
@@ -138,6 +142,16 @@ public class ChatActivity extends AppCompatActivity {
                     etChatMessage.setText(messageText);
                     btnSendMessage.setEnabled(true);
                 });
+    }
+
+    private void recordAllianceMessageSent() {
+        missionService.recordUserAction(MissionActionType.SENT_ALLIANCE_MESSAGE, task -> {
+            if (task.isSuccessful()) {
+                Log.d(TAG, "Alliance message sent successfully recorded for special mission.");
+            } else if (task.getException() != null) {
+                Log.e(TAG, "Failed to record alliance message sent for special mission.", task.getException());
+            }
+        });
     }
 
     @Override

@@ -24,10 +24,12 @@ import com.team21.questify.application.model.Task;
 import com.team21.questify.application.model.TaskCategory;
 import com.team21.questify.application.model.TaskOccurrence;
 import com.team21.questify.application.model.User;
+import com.team21.questify.application.model.enums.MissionActionType;
 import com.team21.questify.application.model.enums.TaskDifficulty;
 import com.team21.questify.application.model.enums.TaskPriority;
 import com.team21.questify.application.model.enums.TaskStatus;
 import com.team21.questify.application.model.enums.TaskType;
+import com.team21.questify.application.service.SpecialMissionService;
 import com.team21.questify.application.service.TaskCategoryService;
 import com.team21.questify.application.service.TaskOccurrenceService;
 import com.team21.questify.application.service.TaskService;
@@ -55,6 +57,7 @@ public class TaskDetailsDialogFragment extends DialogFragment {
     private UserService userService;
     private FirebaseAuth auth;
     private User currentUser;
+    private SpecialMissionService missionService;
 
     private OnTaskUpdatedListener listener;
 
@@ -102,6 +105,7 @@ public class TaskDetailsDialogFragment extends DialogFragment {
         taskOccurrenceService = new TaskOccurrenceService(getContext());
         userService = new UserService(getContext());
         auth = FirebaseAuth.getInstance();
+        missionService = new SpecialMissionService(getContext());
     }
 
     @Nullable
@@ -278,6 +282,44 @@ public class TaskDetailsDialogFragment extends DialogFragment {
                 .show();
     }
 
+    private void recordSpecialMissionProgress() {
+        if (task == null) {
+            return;
+        }
+
+        TaskDifficulty difficulty = task.getTaskDifficulty();
+        TaskPriority priority = task.getTaskPriority();
+
+        MissionActionType actionType;
+        int amount = 1;
+
+
+        if (difficulty == TaskDifficulty.EASY && priority == TaskPriority.NORMAL) {
+            actionType = MissionActionType.SOLVED_PRIMARY_TASK;
+            amount = 2;
+        }
+
+        else if (difficulty == TaskDifficulty.VERY_EASY || difficulty == TaskDifficulty.EASY ||
+                priority == TaskPriority.NORMAL || priority == TaskPriority.IMPORTANT) {
+            actionType = MissionActionType.SOLVED_PRIMARY_TASK;
+            amount = 1;
+        }
+
+        else {
+            actionType = MissionActionType.SOLVED_OTHER_TASK;
+            amount = 1;
+        }
+
+
+        missionService.recordUserAction(actionType, amount, taskResult -> {
+            if (taskResult.isSuccessful()) {
+                Log.d("TaskDetailsDialog", "Special mission progress recorded successfully for action: " + actionType.name());
+            } else if (taskResult.getException() != null) {
+                // Greška se samo loguje da ne ometa korisnika.
+                Log.e("TaskDetailsDialog", "Failed to record special mission progress.", taskResult.getException());
+            }
+        });
+    }
 
 
     private void updateTaskStatus(TaskStatus newStatus) {
@@ -300,6 +342,7 @@ public class TaskDetailsDialogFragment extends DialogFragment {
                     };
 
                     if (newStatus == TaskStatus.COMPLETED) {
+                        recordSpecialMissionProgress();
                         handleXpAwarding(completionAction);
                     } else if (newStatus == TaskStatus.PAUSED) {
                         pauseAllFutureOccurrences(); // Ova metoda mora interno da osveži UI

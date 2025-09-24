@@ -202,10 +202,7 @@ public class TaskLocalDataSource {
 
 
 
-    /**
-     * Ažurira sve podatke za postojeći zadatak.
-     * @param task Task objekat sa ažuriranim podacima.
-     */
+
     public void updateTask(Task task) {
         SQLiteDatabase db = helper.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -228,13 +225,7 @@ public class TaskLocalDataSource {
     }
 
 
-    /**
-     * Ažurira samo krajnji datum ponavljanja za određeni zadatak.
-     * Ovo je optimizovano za "zatvaranje" serije ponavljajućih zadataka.
-     *
-     * @param taskId      ID zadatka koji se ažurira.
-     * @param newEndDate  Novi krajnji datum (u milisekundama).
-     */
+
     public void updateTaskEndDate(String taskId, Long newEndDate) {
         SQLiteDatabase db = helper.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -243,10 +234,7 @@ public class TaskLocalDataSource {
         db.close();
     }
 
-    /**
-     * Briše zadatak iz baze na osnovu njegovog ID-ja.
-     * @param taskId ID zadatka koji treba obrisati.
-     */
+
     public void deleteTask(String taskId) {
         SQLiteDatabase db = helper.getWritableDatabase();
         db.delete(DatabaseHelper.T_TASKS, "id = ?", new String[]{taskId});

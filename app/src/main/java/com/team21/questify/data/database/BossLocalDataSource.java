@@ -18,10 +18,7 @@ public class BossLocalDataSource {
         this.helper = new DatabaseHelper(ctx);
     }
 
-    /**
-     * Ubacuje novog bosa u bazu podataka.
-     * @param boss Objekat Boss koji se ubacuje.
-     */
+
     public void insertBoss(Boss boss) {
         SQLiteDatabase db = helper.getWritableDatabase();
         ContentValues cv = new ContentValues();
@@ -38,11 +35,7 @@ public class BossLocalDataSource {
         db.close();
     }
 
-    /**
-     * Pomoćna metoda koja konvertuje red iz Cursora u Boss objekat.
-     * @param c Kursor pozicioniran na željeni red.
-     * @return Popunjen Boss objekat.
-     */
+
     private Boss cursorToBoss(Cursor c) {
         Boss boss = new Boss();
         boss.setBossId(c.getString(c.getColumnIndexOrThrow("id")));
@@ -51,18 +44,14 @@ public class BossLocalDataSource {
         boss.setCurrentHp(c.getDouble(c.getColumnIndexOrThrow("current_hp")));
         boss.setLevel(c.getInt(c.getColumnIndexOrThrow("level")));
 
-        // Konvertujemo integer (0 ili 1) nazad u boolean
+
         int isDefeatedInt = c.getInt(c.getColumnIndexOrThrow("is_defeated"));
         boss.setIsDefeated(isDefeatedInt == 1);
 
         return boss;
     }
 
-    /**
-     * Vraća listu svih bosova za određenog korisnika.
-     * @param userId ID korisnika.
-     * @return Lista Boss objekata.
-     */
+
     public List<Boss> getAllBossesForUser(String userId) {
         List<Boss> bossList = new ArrayList<>();
         SQLiteDatabase db = helper.getReadableDatabase();
@@ -79,12 +68,7 @@ public class BossLocalDataSource {
         return bossList;
     }
 
-    /**
-     * Pronalazi prvog neporaženog bosa za korisnika, sortirano po nivou.
-     * Ovo je ključna metoda za logiku "ponavljanja" bosa.
-     * @param userId ID korisnika.
-     * @return Boss objekat ako postoji neporaženi bos, inače null.
-     */
+
     public Boss getNextUndefeatedBoss(String userId) {
         SQLiteDatabase db = helper.getReadableDatabase();
         Boss boss = null;
@@ -104,16 +88,12 @@ public class BossLocalDataSource {
     }
 
 
-    /**
-     * Ažurira postojećeg bosa u bazi.
-     * Najčešće će se koristiti za promenu currentHp i isDefeated statusa.
-     * @param boss Objekat Boss sa ažuriranim podacima.
-     */
+
     public void updateBoss(Boss boss) {
         SQLiteDatabase db = helper.getWritableDatabase();
         ContentValues cv = new ContentValues();
 
-        // Stavljamo polja koja se menjaju tokom igre
+
         cv.put("current_hp", boss.getCurrentHp());
         cv.put("is_defeated", boss.getIsDefeated() ? 1 : 0);
 

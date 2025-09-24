@@ -96,7 +96,7 @@ public class ViewTasksListFragment extends Fragment {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        loadTasks(); // učitaj sve taskove i occurrence-e
+        loadTasks();
         return view;
     }
 
@@ -122,7 +122,7 @@ public class ViewTasksListFragment extends Fragment {
                 }
 
                 loadCategoryColors(categoryIds);
-                loadAllOccurrences();  // posle učitavanja taskova -> occurrence-i
+                loadAllOccurrences();
             } else {
                 Log.e(TAG, "Error getting user tasks: ", taskResult.getException());
             }
@@ -196,7 +196,7 @@ public class ViewTasksListFragment extends Fragment {
 
         List<TaskOccurrence> filtered = new ArrayList<>();
         switch (position) {
-            case 1: // One-time
+            case 1:
                 for (TaskOccurrence occ : allOccurrences) {
                     Task t = tasksMap.get(occ.getTaskId());
                     if (t != null && t.getTaskType() == TaskType.ONE_TIME) {
@@ -204,7 +204,7 @@ public class ViewTasksListFragment extends Fragment {
                     }
                 }
                 break;
-            case 2: // Recurring
+            case 2:
                 for (TaskOccurrence occ : allOccurrences) {
                     Task t = tasksMap.get(occ.getTaskId());
                     if (t != null && t.getTaskType() == TaskType.RECURRING) {
@@ -212,7 +212,7 @@ public class ViewTasksListFragment extends Fragment {
                     }
                 }
                 break;
-            default: // All
+            default:
                 filtered = new ArrayList<>(allOccurrences);
         }
         adapter.setOccurrences(filtered);

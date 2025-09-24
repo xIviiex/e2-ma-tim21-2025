@@ -1,21 +1,22 @@
-package com.team21.questify.application.service;
+package com.team21.questify.presentation.activity;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.team21.questify.R;
+import com.team21.questify.application.model.enums.MissionActionType;
+import com.team21.questify.application.service.EquipmentService;
+import com.team21.questify.application.service.SpecialMissionService;
+import com.team21.questify.application.service.UserService;
 import com.team21.questify.presentation.adapter.ShopAdapter;
 import com.team21.questify.utils.EquipmentHelper;
 import com.team21.questify.utils.SharedPrefs;
@@ -26,6 +27,7 @@ public class ShopActivity extends AppCompatActivity {
     private UserService userService;
     private RecyclerView rvShopItems;
     private SharedPrefs sharedPrefs;
+    private SpecialMissionService missionService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +46,7 @@ public class ShopActivity extends AppCompatActivity {
         sharedPrefs = new SharedPrefs(this);
         rvShopItems = findViewById(R.id.rv_shop_items);
         rvShopItems.setLayoutManager(new LinearLayoutManager(this));
-
+        missionService = new SpecialMissionService(this);
         loadShop();
     }
 
@@ -65,11 +67,23 @@ public class ShopActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, item.name + " purchased!", Toast.LENGTH_SHORT).show();
                     buyButton.setEnabled(true);
+                    recordStorePurchase();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Purchase failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     buyButton.setEnabled(true);
                 });
+    }
+
+    private void recordStorePurchase() {
+        missionService.recordUserAction(MissionActionType.STORE_PURCHASE, task -> {
+            if (task.isSuccessful()) {
+                Log.d("ShopActivity", "Store purchase successfully recorded for special mission.");
+            } else if (task.getException() != null) {
+                // Grešku samo logujemo da ne bismo prekidali korisnika.
+                Log.e("ShopActivity", "Failed to record store purchase for special mission.", task.getException());
+            }
+        });
     }
 
     @Override

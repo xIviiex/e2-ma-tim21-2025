@@ -76,7 +76,7 @@ public class ColorAdapter extends RecyclerView.Adapter<ColorAdapter.ColorViewHol
         }
     }
 
-    // Interfejs za slušanje odabira boje
+
     public interface OnColorSelectedListener {
         void onColorSelected(String hexColor);
     }

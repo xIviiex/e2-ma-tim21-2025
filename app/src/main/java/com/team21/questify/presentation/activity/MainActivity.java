@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,7 +17,9 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.team21.questify.R;
 import com.team21.questify.application.model.Boss;
+import com.team21.questify.application.model.enums.FinalizationOutcome;
 import com.team21.questify.application.service.BossService;
+import com.team21.questify.application.service.SpecialMissionService;
 import com.team21.questify.application.service.TaskOccurrenceService;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
@@ -30,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private TaskOccurrenceService taskOccurrenceService;
     private BossService bossService;
     private ImageView bossFightIcon;
+    private SpecialMissionService missionService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+        missionService = new SpecialMissionService(this);
         userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
         taskOccurrenceService = new TaskOccurrenceService(this);
@@ -56,6 +61,37 @@ public class MainActivity extends AppCompatActivity {
         taskOccurrenceService.updateOldOccurrences();
         initViews();
         checkBossFightAvailability(userId);
+        checkSpecialMissionStatus();
+    }
+
+
+    private void checkSpecialMissionStatus() {
+        missionService.checkAndFinalizeExpiredMission(task -> {
+            if (task.isSuccessful()) {
+                FinalizationOutcome outcome = task.getResult();
+
+
+                switch (outcome) {
+                    case REWARDS_GRANTED:
+                        Toast.makeText(this, "Special Mission successful! Rewards have been granted.", Toast.LENGTH_LONG).show();
+                        Log.d("MainActivity", "Expired mission finalized: Rewards granted.");
+                        break;
+
+                    case MISSION_FAILED:
+                        Toast.makeText(this, "Special Mission time expired and the boss survived. No rewards.", Toast.LENGTH_LONG).show();
+                        Log.d("MainActivity", "Expired mission finalized: Mission Failed.");
+                        break;
+
+                    case NO_ACTION_NEEDED:
+
+                        Log.d("MainActivity", "Expired mission check: No action needed.");
+                        break;
+                }
+
+            } else {
+                Log.e("MainActivity", "An error occurred during expired mission check.", task.getException());
+            }
+        });
     }
 
 
