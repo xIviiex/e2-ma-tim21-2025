@@ -228,7 +228,8 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_weapons"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"/>
 
             <!-- Armor -->
             <TextView
@@ -241,7 +242,8 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_armor"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"/>
 
             <!-- Potions -->
             <TextView
@@ -254,7 +256,8 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_potions"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"/>
 
             <Button
                 android:id="@+id/btn_manage_equipment"

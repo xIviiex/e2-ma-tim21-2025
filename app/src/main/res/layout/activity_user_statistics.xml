@@ -25,11 +25,12 @@
             android:padding="16dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/number_of_tasks_by_status"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:gravity="center"
                 android:layout_marginBottom="8dp"/>
 
             <FrameLayout
@@ -40,10 +41,11 @@
                 android:background="#e0e0e0"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/active_days_streak"
                 android:textSize="18sp"
+                android:gravity="center"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"/>
 
@@ -58,11 +60,12 @@
                 android:layout_marginBottom="16dp"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/xp_won_in_the_last_7_days"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:gravity="center"
                 android:layout_marginBottom="8dp"/>
 
             <FrameLayout
@@ -73,29 +76,31 @@
                 android:background="#e0e0e0"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/completed_tasks_streak"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:gravity="center"
                 android:layout_marginBottom="8dp"/>
 
             <TextView
                 android:id="@+id/tvLongestTaskStreak"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="0 days"
                 android:textSize="32sp"
                 android:textStyle="bold"
-                android:layout_gravity="center_horizontal"
+                android:gravity="center"
                 android:layout_marginBottom="16dp"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/completed_tasks_by_category"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:gravity="center"
                 android:layout_marginBottom="8dp"/>
 
             <FrameLayout
@@ -106,11 +111,12 @@
                 android:background="#e0e0e0"/>
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/average_difficulty_of_completed_tasks"
                 android:textSize="18sp"
                 android:textStyle="bold"
+                android:gravity="center"
                 android:layout_marginBottom="8dp"/>
 
             <FrameLayout
@@ -119,6 +125,25 @@
                 android:layout_height="250dp"
                 android:layout_marginBottom="16dp"
                 android:background="#e0e0e0"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Special Missions"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"/>
+            <TextView
+                android:id="@+id/tvSpecialMissionsCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                tools:text="1 Started / 0 Completed"/>
 
         </LinearLayout>
     </ScrollView>

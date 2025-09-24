@@ -5,10 +5,12 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.team21.questify.application.model.TaskOccurrence;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.TaskDifficulty;
 import com.team21.questify.application.model.enums.TaskStatus;
+import com.team21.questify.data.repository.SpecialMissionRepository;
 import com.team21.questify.data.repository.TaskOccurrenceRepository;
 import com.team21.questify.data.repository.TaskRepository;
 import com.team21.questify.data.repository.UserRepository;
@@ -28,11 +30,14 @@ public class UserStatisticsService {
     private final TaskOccurrenceRepository taskOccurrenceRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final SpecialMissionRepository missionRepository;
+
 
     public UserStatisticsService(Context context) {
         this.taskOccurrenceRepository = new TaskOccurrenceRepository(context);
         this.taskRepository = new TaskRepository(context);
         this.userRepository = new UserRepository(context);
+        this.missionRepository = new SpecialMissionRepository(context);
     }
 
     public Map<TaskStatus, Integer> getTaskCountsByStatus(String userId) {
@@ -171,5 +176,36 @@ public class UserStatisticsService {
             return 0;
         });
     }
+
+    public Task<Integer> countStartedMissionsForUser(String userId) {
+        return userRepository.getUserById(userId).continueWithTask(userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                return Tasks.forResult(0);
+            }
+            String allianceId = userTask.getResult().getCurrentAllianceId();
+            if (allianceId == null || allianceId.isEmpty()) {
+                return Tasks.forResult(0);
+            }
+
+            return missionRepository.getStartedMissionsForAlliance(allianceId)
+                    .continueWith(task -> task.isSuccessful() ? task.getResult().size() : 0);
+        });
+    }
+
+    public Task<Integer> countCompletedMissionsForUser(String userId) {
+        return userRepository.getUserById(userId).continueWithTask(userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                return Tasks.forResult(0);
+            }
+            String allianceId = userTask.getResult().getCurrentAllianceId();
+            if (allianceId == null || allianceId.isEmpty()) {
+                return Tasks.forResult(0);
+            }
+
+            return missionRepository.getCompletedMissionsForAlliance(allianceId)
+                    .continueWith(task -> task.isSuccessful() ? task.getResult().size() : 0);
+        });
+    }
+
 
 }

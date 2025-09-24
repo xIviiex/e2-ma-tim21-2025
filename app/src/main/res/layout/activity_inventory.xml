@@ -33,8 +33,9 @@
 
                 <TextView
                     android:id="@+id/tv_inventory_weapons_title"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:text="Weapons"
                     android:textSize="18sp"
                     android:textStyle="bold"/>
@@ -46,8 +47,9 @@
 
                 <TextView
                     android:id="@+id/tv_inventory_armor_title"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:text="Armor"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -60,8 +62,9 @@
 
                 <TextView
                     android:id="@+id/tv_inventory_potions_title"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
                     android:text="Potions"
                     android:textSize="18sp"
                     android:textStyle="bold"

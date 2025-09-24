@@ -41,4 +41,18 @@ public class SpecialMissionRemoteDataSource {
     public Task<Void> deleteMission(String missionId) {
         return getMissionsCollection().document(missionId).delete();
     }
+
+    public Task<QuerySnapshot> getCompletedMissionsForAlliance(String allianceId) {
+        return getMissionsCollection()
+                .whereEqualTo("allianceId", allianceId)
+                .whereEqualTo("missionStatus", MissionStatus.COMPLETED.name())
+                .get();
+    }
+
+    public Task<QuerySnapshot> getStartedMissionsForAlliance(String allianceId) {
+        return getMissionsCollection()
+                .whereEqualTo("allianceId", allianceId)
+                .whereEqualTo("missionStatus", MissionStatus.STARTED.name())
+                .get();
+    }
 }
