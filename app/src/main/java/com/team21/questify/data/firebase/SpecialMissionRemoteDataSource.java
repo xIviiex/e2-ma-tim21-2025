@@ -55,4 +55,10 @@ public class SpecialMissionRemoteDataSource {
                 .whereEqualTo("missionStatus", MissionStatus.STARTED.name())
                 .get();
     }
+
+    public Task<QuerySnapshot> getMissionsForUser(String allianceId) {
+        return getMissionsCollection()
+                .whereEqualTo("allianceId", allianceId)
+                .get();
+    }
 }
