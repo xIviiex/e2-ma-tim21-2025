@@ -74,7 +74,7 @@ public class EditTaskActivity extends AppCompatActivity {
             timePicker.setCurrentMinute(minute);
         }
 
-        // Popunjavanje Spinnera za težinu
+
         List<String> difficultyList = new ArrayList<>();
         for (TaskDifficulty difficulty : TaskDifficulty.values()) {
             difficultyList.add(difficulty.name());
@@ -109,7 +109,7 @@ public class EditTaskActivity extends AppCompatActivity {
             minute = timePicker.getCurrentMinute();
         }
 
-        // Pretvori sat i minut u millis (samo vreme u danu)
+
         long executionTime = (hour * 60L * 60L * 1000L) + (minute * 60L * 1000L);
 
         TaskDifficulty difficulty = TaskDifficulty.valueOf(
@@ -120,7 +120,7 @@ public class EditTaskActivity extends AppCompatActivity {
                 prioritySpinner.getSelectedItem().toString()
         );
 
-        // Preuzmi originalni task (možeš ga čuvati u polju)
+
         Task updatedTask = currentTask;
         updatedTask.setName(name);
         updatedTask.setDescription(description);

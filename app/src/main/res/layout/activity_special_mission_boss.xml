@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#2C3E50"
-    tools:context=".presentation.activity.SpecialMissionBoss">
+    tools:context=".presentation.activity.SpecialMissionBossActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"

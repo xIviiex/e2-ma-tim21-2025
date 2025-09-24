@@ -70,7 +70,7 @@ public class TaskCategoryViewActivity extends AppCompatActivity implements Categ
         taskCategoryService.getAllCategoriesForUser(task -> {
             if (task.isSuccessful() && task.getResult() != null) {
                 List<TaskCategory> categories = task.getResult();
-                // Važno: Ažuriranje UI-a (liste) mora da se desi na glavnoj (UI) niti.
+
                 runOnUiThread(() -> adapter.setCategories(categories));
             } else {
                 runOnUiThread(() -> Toast.makeText(this, "Failed to load categories.", Toast.LENGTH_SHORT).show());

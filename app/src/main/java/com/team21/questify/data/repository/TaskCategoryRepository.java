@@ -51,7 +51,7 @@ public class TaskCategoryRepository {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     TaskCategory category = document.toObject(TaskCategory.class);
                     remoteCategories.add(category);
-                    localDataSource.insertCategory(category); // Sinhronizacija u lokalnu bazu
+                    localDataSource.insertCategory(category);
                 }
                 listener.onComplete(Tasks.forResult(remoteCategories));
             } else {
@@ -87,15 +87,15 @@ public class TaskCategoryRepository {
 
 
     public void updateCategory(TaskCategory category, OnCompleteListener<Void> listener) {
-        // Prvo update u remote
+
         remoteDataSource.updateCategory(category, task -> {
             if (task.isSuccessful()) {
-                // Ako remote uspe, update-ujemo i lokalno
+
                 localDataSource.updateCategory(category);
                 listener.onComplete(task);
             } else {
                 Log.e("TaskCategoryRepository", "Failed to update category in remote db: " + task.getException());
-                // I dalje ažuriraj lokalno (možeš i da preskočiš ako hoćeš striktno remote-first logiku)
+
                 localDataSource.updateCategory(category);
                 listener.onComplete(task);
             }

@@ -31,8 +31,10 @@ import com.team21.questify.application.model.BattleStats;
 import com.team21.questify.application.model.Boss;
 import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.EquipmentId;
+import com.team21.questify.application.model.enums.MissionActionType;
 import com.team21.questify.application.service.BossService;
 import com.team21.questify.application.service.EquipmentService;
+import com.team21.questify.application.service.SpecialMissionService;
 import com.team21.questify.application.service.TaskOccurrenceService;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.LevelCalculator;
@@ -52,7 +54,7 @@ public class BossFightActivity extends AppCompatActivity {
     private EquipmentService equipmentService;
     private SharedPrefs sharedPrefs;
     private TaskOccurrenceService taskOccurrenceService;
-
+    private SpecialMissionService missionService;
     // Modeli
     private Boss currentBoss;
     private User currentUser;
@@ -100,6 +102,7 @@ public class BossFightActivity extends AppCompatActivity {
         equipmentService = new EquipmentService(this);
         sharedPrefs = new SharedPrefs(this);
         taskOccurrenceService = new TaskOccurrenceService(this);
+        missionService = new SpecialMissionService(this);
     }
 
     private void initViews() {
@@ -198,7 +201,7 @@ public class BossFightActivity extends AppCompatActivity {
                 this.userPowerPoints = (int) (this.currentUser.getPowerPoints() * battleStats.getPowerPointsMultiplier());
                 this.hitChance = (int) (taskSuccessRate + battleStats.getHitChanceBonus() * 100);
 
-                // Ažuriraj UI
+
                 updateUI();
 
             }).addOnFailureListener(e -> finishWithError("Error loading secondary fight data: " + e.getMessage()));
@@ -238,6 +241,15 @@ public class BossFightActivity extends AppCompatActivity {
         updateAttackCounterUI();
 
         if (random.nextInt(100) < hitChance) {
+
+            missionService.recordUserAction(MissionActionType.REGULAR_BOSS_HIT, task -> {
+                if (task.isSuccessful()) {
+                    Log.d("BossFightActivity", "Regular boss hit successfully recorded for special mission.");
+                } else if (task.getException() != null) {
+                    // Samo logujemo grešku, ne prikazujemo je korisniku da ne bi smetala.
+                    Log.e("BossFightActivity", "Failed to record regular boss hit.", task.getException());
+                }
+            });
 
             currentBoss.setCurrentHp(currentBoss.getCurrentHp() - userPowerPoints);
             if (currentBoss.getCurrentHp() < 0) currentBoss.setCurrentHp(0);

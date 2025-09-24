@@ -30,7 +30,7 @@ public class TaskRepository {
     }
 
     public void createTask(Task task, OnCompleteListener<Void> listener) {
-        // Pokušaj unosa u udaljenu bazu
+
         remoteDataSource.insertTask(task, taskRemote -> {
             if (!taskRemote.isSuccessful()) {
                 Log.e("TaskRepository", "Failed to insert task to remote db: " + taskRemote.getException());
@@ -73,14 +73,14 @@ public class TaskRepository {
             return;
         }
 
-        // 2. If not found locally, query the remote database
+
         remoteDataSource.getTaskById(taskId, remoteTaskResult -> {
             if (remoteTaskResult.isSuccessful() && remoteTaskResult.getResult() != null && remoteTaskResult.getResult().exists()) {
-                // Convert the DocumentSnapshot to a Task object
+
                 Task remoteTask = remoteTaskResult.getResult().toObject(Task.class);
 
                 if (remoteTask != null) {
-                    // Insert the fetched task into the local database for future offline access
+
                     localDataSource.insertTask(remoteTask);
                     listener.onComplete(Tasks.forResult(remoteTask));
                 } else {
@@ -88,7 +88,7 @@ public class TaskRepository {
                 }
 
             } else {
-                // Task not found in remote database, or there was an error
+
                 Exception exception = remoteTaskResult.getException() != null ? remoteTaskResult.getException() : new Exception("Task not found.");
                 listener.onComplete(Tasks.forException(exception));
             }
@@ -140,12 +140,12 @@ public class TaskRepository {
 
 
     public void updateTask(Task task, OnCompleteListener<Void> listener) {
-        // Konvertujemo Task u Map<String, Object> za Firestore update metodu
+
         Map<String, Object> updates = taskToMap(task);
 
         remoteDataSource.updateTask(task.getId(), updates, taskRemote -> {
             if (taskRemote.isSuccessful()) {
-                // Ako je update na serveru uspeo, ažuriraj i lokalno
+
                 localDataSource.updateTask(task);
             } else {
                 Log.e("TaskRepository", "Failed to update task on remote db: " + taskRemote.getException());
@@ -157,7 +157,7 @@ public class TaskRepository {
     public void updateTaskEndDate(String taskId, Long newEndDate, OnCompleteListener<Void> listener) {
         remoteDataSource.updateTaskEndDate(taskId, newEndDate, taskRemote -> {
             if (taskRemote.isSuccessful()) {
-                // Ako je update na serveru uspeo, ažuriraj i lokalno
+
                 localDataSource.updateTaskEndDate(taskId, newEndDate);
             } else {
                 Log.e("TaskRepository", "Failed to update task end date on remote db: " + taskRemote.getException());

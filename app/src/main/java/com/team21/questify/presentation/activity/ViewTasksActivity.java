@@ -27,7 +27,7 @@ public class ViewTasksActivity extends AppCompatActivity {
         btnViewCategories = findViewById(R.id.btnViewCategories);
 
         btnViewCategories.setOnClickListener(v -> {
-            // Kreirajte Intent za pokretanje TaskCategoryViewActivity
+
             Intent intent = new Intent(ViewTasksActivity.this, TaskCategoryViewActivity.class);
             startActivity(intent);
         });
@@ -40,10 +40,10 @@ public class ViewTasksActivity extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 Fragment fragmentToLoad;
                 switch (position) {
-                    case 0: // Kalendarski prikaz
+                    case 0:
                         fragmentToLoad = new ViewTasksCalendarFragment();
                         break;
-                    case 1: // Lista zadataka
+                    case 1:
                         fragmentToLoad = new ViewTasksListFragment();
                         break;
                     default:
@@ -56,7 +56,7 @@ public class ViewTasksActivity extends AppCompatActivity {
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        // Učitaj default fragment
+
         if (savedInstanceState == null) {
             loadFragment(new ViewTasksCalendarFragment());
         }

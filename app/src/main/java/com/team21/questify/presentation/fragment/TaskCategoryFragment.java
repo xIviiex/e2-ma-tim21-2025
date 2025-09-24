@@ -34,7 +34,7 @@ public class TaskCategoryFragment extends Fragment {
     private CategorySelectedListener categorySelectedListener;
 
     public TaskCategoryFragment() {
-        // Required empty public constructor
+
     }
 
     public static TaskCategoryFragment newInstance() {
@@ -60,7 +60,7 @@ public class TaskCategoryFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Prikazivanje layout-a za ovaj fragment
+
         return inflater.inflate(R.layout.fragment_task_category, container, false);
     }
 
@@ -94,7 +94,7 @@ public class TaskCategoryFragment extends Fragment {
 
                     categorySpinner.setAdapter(adapter);
 
-                    // Odmah prosleđujemo prvu kao selektovanu
+
                     if (categorySelectedListener != null) {
                         categorySelectedListener.onCategorySelected(categoryIds.get(0));
                     }

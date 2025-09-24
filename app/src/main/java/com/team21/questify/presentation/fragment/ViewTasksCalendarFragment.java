@@ -54,7 +54,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
     private TaskCategoryService taskCategoryService;
     private FirebaseAuth auth;
 
-    // Keširanje podataka
+
     private Map<String, Task> tasksMap = new HashMap<>();
     private Map<Long, List<TaskOccurrence>> occurrencesByDay = new HashMap<>();
     private Map<String, Integer> categoryColorMap = new HashMap<>();
@@ -63,7 +63,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
 
 
     public ViewTasksCalendarFragment() {
-        // Required empty public constructor
+
     }
 
     public static ViewTasksCalendarFragment newInstance() {
@@ -109,7 +109,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
         });
 
 
-        // Prikaz zadataka za danasnji dan na pocetku i postavi tekst
+
         Date today = new Date();
         filterTasksByDate(today);
         updateSelectedDateText(today);
@@ -120,7 +120,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
     public void onTaskClick(TaskOccurrence occurrence) {
         TaskDetailsDialogFragment dialogFragment = TaskDetailsDialogFragment.newInstance(occurrence);
         dialogFragment.setOnTaskUpdatedListener(() -> {
-            // Reload occurrences i osveži kalendar
+
             loadAllOccurrences();
             Toast.makeText(getContext(), "Calendar refreshed", Toast.LENGTH_SHORT).show();
         });
@@ -178,7 +178,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
                 } else {
                     categoryColorMap.put(categoryId, Color.GRAY);
                 }
-                // Osveži dekoratore kalendara svaki put kad dobijemo boju
+
                 updateCalendarDecorators();
             });
         }
@@ -203,7 +203,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
                 }
 
                 updateCalendarDecorators();
-                filterTasksByDate(new Date()); // prikaz za danas
+                filterTasksByDate(new Date());
             } else {
                 Log.e(TAG, "Error getting task occurrences: ", occurrenceResult.getException());
             }
@@ -227,7 +227,7 @@ public class ViewTasksCalendarFragment extends Fragment implements TaskForDayAda
 
             if (task != null && task.getTaskCategoryId() != null) {
                 Integer color = categoryColorMap.get(task.getTaskCategoryId());
-                // Napravi custom EventDay ako koristiš boje, ili koristi drawable ako samo hoćeš da se nešto pojavi
+
                 events.add(new EventDay(cal, drawableRes));
             }
         }

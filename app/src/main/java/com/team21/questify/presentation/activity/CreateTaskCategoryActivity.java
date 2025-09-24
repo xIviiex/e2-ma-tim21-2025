@@ -60,7 +60,7 @@ public class CreateTaskCategoryActivity extends AppCompatActivity {
     }
 
     private void setupColorPicker() {
-        // Kreiranje liste hex boja koje se prikazuju
+
         List<String> colorList = new ArrayList<>();
         colorList.add("#F44336"); // Red
         colorList.add("#E91E63"); // Pink
@@ -106,7 +106,7 @@ public class CreateTaskCategoryActivity extends AppCompatActivity {
         taskCategoryService.createCategory(categoryName, selectedHexColor, task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(this, "Category created!", Toast.LENGTH_SHORT).show();
-                finish(); // Zatvara aktivnost i vraća se na prethodnu
+                finish();
             } else {
                 Toast.makeText(this, "Category creating failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
             }

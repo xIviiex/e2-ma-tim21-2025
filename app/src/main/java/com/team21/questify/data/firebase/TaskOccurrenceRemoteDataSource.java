@@ -45,7 +45,7 @@ public class TaskOccurrenceRemoteDataSource {
     public void getOccurrencesByTaskId(String taskId, OnCompleteListener<QuerySnapshot> listener) {
         db.collection(OCCURRENCES_COLLECTION)
                 .whereEqualTo("taskId", taskId)
-                .orderBy("date", Query.Direction.ASCENDING) // Sortirano po datumu
+                .orderBy("date", Query.Direction.ASCENDING)
                 .get()
                 .addOnCompleteListener(listener);
     }
@@ -92,17 +92,17 @@ public class TaskOccurrenceRemoteDataSource {
 
 
     public void getTodaysCompletedOccurrencesForUser(String userId, OnCompleteListener<QuerySnapshot> listener) {
-        // 1. Izračunaj početak i kraj današnjeg dana u milisekundama.
+
         Calendar calendar = Calendar.getInstance();
 
-        // Postavi vreme na početak dana (00:00:00.000)
+
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         long startOfDayMillis = calendar.getTimeInMillis();
 
-        // Postavi vreme na kraj dana (23:59:59.999)
+
         calendar.set(Calendar.HOUR_OF_DAY, 23);
         calendar.set(Calendar.MINUTE, 59);
         calendar.set(Calendar.SECOND, 59);
@@ -112,7 +112,7 @@ public class TaskOccurrenceRemoteDataSource {
 
         db.collection(OCCURRENCES_COLLECTION)
                 .whereEqualTo("userId", userId)
-                .whereEqualTo("status", "COMPLETED") // Pretpostavka da je status sačuvan kao string "COMPLETED"
+                .whereEqualTo("status", "COMPLETED")
                 .whereGreaterThanOrEqualTo("date", startOfDayMillis)
                 .whereLessThanOrEqualTo("date", endOfDayMillis)
                 .orderBy("date", Query.Direction.ASCENDING)

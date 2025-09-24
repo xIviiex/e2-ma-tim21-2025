@@ -288,23 +288,35 @@ public class AllianceActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Pokreće novu specijalnu misiju i nakon uspešnog pokretanja navigira na ekran borbe.
+     */
     private void startSpecialMission() {
-        btnSpecialMission.setEnabled(false); // Disable button to prevent multiple clicks
+        btnSpecialMission.setEnabled(false); // Onemogući dugme da se spreče dupli klikovi
         missionService.startMissionForAlliance(allianceId, task -> {
             if (task.isSuccessful()) {
                 Toast.makeText(this, "Boss fight has started!", Toast.LENGTH_SHORT).show();
-                // TODO: Navigate to the mission screen or update UI accordingly
+                navigateToBossFight(); // Navigiraj na ekran borbe
             } else {
                 Exception e = task.getException();
                 String errorMessage = "Failed to start boss fight.";
                 if (e != null && e.getMessage() != null) {
-                    errorMessage += "\n" + e.getMessage();
+                    errorMessage = e.getMessage(); // Prikaži konkretnu grešku iz servisa
+                    navigateToBossFight();
                 }
                 Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
                 Log.e(TAG, "startSpecialMission failed", e);
             }
-            btnSpecialMission.setEnabled(true); // Re-enable button
+            btnSpecialMission.setEnabled(true); // Ponovo omogući dugme
         });
+    }
+
+    /**
+     * Pomoćna metoda za navigaciju na SpecialMissionBossActivity.
+     */
+    private void navigateToBossFight() {
+        Intent intent = new Intent(AllianceActivity.this, SpecialMissionBossActivity.class);
+        startActivity(intent);
     }
 
 }

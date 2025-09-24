@@ -15,10 +15,13 @@
             android:name=".presentation.activity.BossFightActivity"
             android:exported="false" />
         <activity
+            android:name=".presentation.activity.SpecialMissionBossActivity"
+            android:exported="false" />
+        <activity
             android:name=".presentation.activity.InventoryActivity"
             android:exported="false" />
         <activity
-            android:name=".application.service.ShopActivity"
+            android:name=".presentation.activity.ShopActivity"
             android:exported="false" />
         <activity
             android:name=".presentation.activity.TaskCategoryViewActivity"

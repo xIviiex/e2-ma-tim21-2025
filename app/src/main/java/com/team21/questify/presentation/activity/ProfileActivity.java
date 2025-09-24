@@ -26,7 +26,6 @@ import com.team21.questify.R;
 import com.team21.questify.application.model.Equipment;
 import com.team21.questify.application.model.enums.EquipmentType;
 import com.team21.questify.application.service.EquipmentService;
-import com.team21.questify.application.service.ShopActivity;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.presentation.adapter.EquipmentAdapter;
 import com.team21.questify.utils.SharedPrefs;
