@@ -46,13 +46,13 @@ public class TaskOccurrenceRepository {
     public void createOccurrence(TaskOccurrence occurrence, OnCompleteListener<Void> listener) {
 
 
-        // Unos u udaljenu bazu
+
         remoteDataSource.insertOccurrence(occurrence, taskRemote -> {
             if (!taskRemote.isSuccessful()) {
                 Log.e("TaskOccurrenceRepo", "Failed to insert occurrence to remote db: " + taskRemote.getException());
 
             }
-            // Unos u lokalnu bazu
+
             localDataSource.insertTaskOccurrence(occurrence);
             listener.onComplete(taskRemote);
         });
@@ -72,7 +72,7 @@ public class TaskOccurrenceRepository {
                 }
                 listener.onComplete(Tasks.forResult(remoteOccurrences));
             } else {
-                // Ako Firestore nije uspeo, koristi lokalne ako ih ima
+
                 if (!localOccurrences.isEmpty()) {
                     listener.onComplete(Tasks.forResult(localOccurrences));
                 } else {
@@ -119,7 +119,7 @@ public class TaskOccurrenceRepository {
                 List<TaskOccurrence> remoteOccurrences = taskRemote.getResult().toObjects(TaskOccurrence.class);
                 listener.onComplete(Tasks.forResult(remoteOccurrences));
             } else {
-                // Fallback na lokalnu bazu ako remote ne uspe
+
                 executor.execute(() -> {
                     List<TaskOccurrence> localOccurrences = localDataSource.getOccurrencesByTaskId(taskId);
                     listener.onComplete(Tasks.forResult(localOccurrences));
@@ -133,27 +133,27 @@ public class TaskOccurrenceRepository {
             if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
                 List<TaskOccurrence> allFutureOccurrences = taskRemote.getResult().toObjects(TaskOccurrence.class);
 
-                // Dodatno filtriranje na klijentu
+
                 List<TaskOccurrence> uncompletedFutureOccurrences = allFutureOccurrences.stream()
                         .filter(occ -> occ.getStatus() != TaskStatus.COMPLETED)
                         .collect(Collectors.toList());
 
                 listener.onComplete(Tasks.forResult(uncompletedFutureOccurrences));
             } else {
-                // Ako remote ne uspe, prosledi grešku
+
                 listener.onComplete(Tasks.forException(taskRemote.getException()));
             }
         });
     }
 
     public void updateOccurrenceTaskId(String occurrenceId, String newTaskId, OnCompleteListener<Void> listener) {
-        // Prvo ažuriraj remote bazu
+
         remoteDataSource.updateOccurrenceTaskId(occurrenceId, newTaskId, taskRemote -> {
             if (taskRemote.isSuccessful()) {
-                // Ako je remote uspeo, ažuriraj i lokalnu
+
                 executor.execute(() -> localDataSource.updateTaskOccurrenceTaskId(occurrenceId, newTaskId));
             }
-            // Prosledi rezultat listeneru bez obzira na ishod lokalne operacije
+
             listener.onComplete(taskRemote);
         });
     }
@@ -163,15 +163,15 @@ public class TaskOccurrenceRepository {
         executor.execute(() -> {
             long today = System.currentTimeMillis();
 
-            // 1. Učitaj sve buduće occurrence za dati task (lokalno)
+
             List<TaskOccurrence> localFuture = localDataSource.findFutureOccurrences(taskId, today);
 
-            // 2. Remote fetch future occurrences
+
             remoteDataSource.findFutureOccurrences(taskId, today, taskRemote -> {
                 if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
                     List<TaskOccurrence> futureOccurrences = taskRemote.getResult().toObjects(TaskOccurrence.class);
 
-                    // 3. Briši svuda (osim completed)
+
                     for (TaskOccurrence occ : futureOccurrences) {
                         if (occ.getStatus() != TaskStatus.COMPLETED) {
                             remoteDataSource.deleteOccurrence(occ.getId(), t -> {});
@@ -197,18 +197,18 @@ public class TaskOccurrenceRepository {
 
 
     public void getTodaysCompletedOccurrencesForUser(String userId, OnCompleteListener<List<TaskOccurrence>> listener) {
-        // 1. Pokušaj dohvatanja sa udaljenog izvora (Firestore)
+
         remoteDataSource.getTodaysCompletedOccurrencesForUser(userId, taskRemote -> {
             if (taskRemote.isSuccessful() && taskRemote.getResult() != null) {
-                // 2. Ako je udaljeni izvor uspeo, konvertuj podatke i prosledi ih dalje
+
                 List<TaskOccurrence> remoteOccurrences = taskRemote.getResult().toObjects(TaskOccurrence.class);
                 listener.onComplete(Tasks.forResult(remoteOccurrences));
             } else {
-                // 3. Ako udaljeni izvor nije uspeo, koristi lokalnu bazu kao fallback
+
                 Log.w("TaskOccurrenceRepo", "Remote fetch failed for today's completed. Falling back to local.", taskRemote.getException());
                 executor.execute(() -> {
                     List<TaskOccurrence> localOccurrences = localDataSource.getTodaysCompletedOccurrencesForUser(userId);
-                    // Prosledi rezultat iz lokalne baze (može biti i prazna lista)
+
                     listener.onComplete(Tasks.forResult(localOccurrences));
                 });
             }
@@ -217,17 +217,17 @@ public class TaskOccurrenceRepository {
 
 
     public void updateOccurrenceStatus(String occurrenceId, TaskStatus status, OnCompleteListener<Void> listener) {
-        // Pripremi mapu za Firestore
+
         Map<String, Object> updates = new HashMap<>();
         updates.put("status", status.name());
 
-        // Prvo ažuriraj remote bazu
+
         remoteDataSource.updateOccurrence(occurrenceId, updates, taskRemote -> {
             if (taskRemote.isSuccessful()) {
-                // Ako je remote uspeo, ažuriraj i lokalnu bazu
+
                 executor.execute(() -> localDataSource.updateOccurrenceStatus(occurrenceId, status));
             }
-            // Prosledi rezultat listeneru
+
             listener.onComplete(taskRemote);
         });
     }
@@ -238,7 +238,7 @@ public class TaskOccurrenceRepository {
             if (task.isSuccessful()) {
                 listener.onComplete(Tasks.forResult(task.getResult().toObjects(TaskOccurrence.class)));
             } else {
-                // Fallback na lokalnu bazu
+
                 executor.execute(() -> {
                     List<TaskOccurrence> localOccurrences = localDataSource.getCompletedOccurrencesForDateRange(userId, fromDate, toDate);
                     listener.onComplete(Tasks.forResult(localOccurrences));
@@ -261,10 +261,10 @@ public class TaskOccurrenceRepository {
         remoteDataSource.getOldActiveOccurrences(userId, getTask -> {
             if (getTask.isSuccessful() && getTask.getResult() != null) {
                 if (getTask.getResult().isEmpty()) {
-                    return; // Nema starih zadataka na remote-u, posao je gotov.
+                    return;
                 }
 
-                // Kreiraj batch operaciju za efikasno ažuriranje
+
                 WriteBatch batch = FirebaseFirestore.getInstance().batch();
                 Map<String, Object> updates = new HashMap<>();
                 updates.put("status", TaskStatus.UNCOMPLETED.name());
@@ -312,7 +312,7 @@ public class TaskOccurrenceRepository {
 
 
     public Task<List<TaskOccurrence>> getUncompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
-        // 1. Prvo pokušaj dohvatiti s Firebasea
+
         return remoteDataSource.getUncompletedOccurrencesInDateRange(userId, fromDate, toDate)
                 .continueWithTask(task -> {
                     if (task.isSuccessful()) {

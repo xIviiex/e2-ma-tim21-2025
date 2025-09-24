@@ -56,8 +56,8 @@ public class TaskRemoteDataSource {
 
     public void updateTaskEndDate(String taskId, Long newEndDate, OnCompleteListener<Void> listener) {
         Map<String, Object> updates = new HashMap<>();
-        updates.put("recurringEndDate", newEndDate); // Polje u Firestore-u se zove recurringEndDate
-        updateTask(taskId, updates, listener); // Koristimo generičku update metodu
+        updates.put("recurringEndDate", newEndDate);
+        updateTask(taskId, updates, listener);
     }
 
 

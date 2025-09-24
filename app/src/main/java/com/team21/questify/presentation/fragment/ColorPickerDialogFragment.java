@@ -20,7 +20,7 @@ import java.util.List;
 
 public class ColorPickerDialogFragment extends DialogFragment {
 
-    // Definišemo interfejs preko koga će dijalog vratiti izabranu boju
+
     public interface ColorPickerListener {
         void onColorSelected(String hexColor);
     }
@@ -34,13 +34,13 @@ public class ColorPickerDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(@Nullable Bundle savedInstanceState) {
-        // Kreiramo View iz XML layout-a
+
         LayoutInflater inflater = requireActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_color_picker, null);
 
         RecyclerView rvColorPicker = view.findViewById(R.id.rv_dialog_color_picker);
 
-        // Koristimo istu listu boja kao u CreateTaskCategoryActivity
+
         List<String> colorList = new ArrayList<>();
         colorList.add("#F44336"); colorList.add("#E91E63"); colorList.add("#9C27B0");
         colorList.add("#673AB7"); colorList.add("#3F51B5"); colorList.add("#2196F3");
@@ -50,24 +50,24 @@ public class ColorPickerDialogFragment extends DialogFragment {
         colorList.add("#FF5722"); colorList.add("#795548"); colorList.add("#9E9E9E");
         colorList.add("#607D8B");
 
-        // Kreiramo ColorAdapter. Kada se boja izabere...
+
         ColorAdapter colorAdapter = new ColorAdapter(colorList, hexColor -> {
             if (listener != null) {
-                // ...pozivamo listener...
+
                 listener.onColorSelected(hexColor);
             }
-            // ...i zatvaramo dijalog.
+
             dismiss();
         });
 
         rvColorPicker.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvColorPicker.setAdapter(colorAdapter);
 
-        // Kreiramo i vraćamo AlertDialog
+
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         builder.setView(view)
                 .setNegativeButton("Cancel", (dialog, id) -> {
-                    // Ne radi ništa, samo zatvori
+
                 });
         return builder.create();
     }

@@ -28,6 +28,7 @@ public class ShopAdapter extends RecyclerView.Adapter<ShopAdapter.ShopViewHolder
     private final int userLevel;
     private final OnItemBuyClickListener listener;
 
+
     public ShopAdapter(List<EquipmentHelper.ShopItem> items, int userLevel, EquipmentService equipmentService, OnItemBuyClickListener listener) {
         this.items = items;
         this.userLevel = userLevel;

@@ -51,7 +51,7 @@ public class TaskViewHolder extends RecyclerView.ViewHolder {
             taskTitleTextView.setText(task.getName());
             taskStatusTextView.setText(occurrence.getStatus().name());
 
-            // Set boja kategorije
+
             int color = categoryColorMap.getOrDefault(task.getTaskCategoryId(), Color.GRAY);
             colorIndicator.setBackgroundTintList(ColorStateList.valueOf(color));
 
@@ -64,7 +64,7 @@ public class TaskViewHolder extends RecyclerView.ViewHolder {
 
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onTaskClick(occurrence); // Prosleđujemo occurrence
+                    listener.onTaskClick(occurrence);
                 }
             });
         } else {

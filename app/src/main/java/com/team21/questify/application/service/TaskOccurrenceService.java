@@ -198,4 +198,35 @@ public class TaskOccurrenceService {
         });
     }
 
+    public Task<Integer> getUncompletedOccurrencesCountInDateRange(String userId, Long startTime, Long endTime) {
+        FirebaseUser currentUser = auth.getCurrentUser();
+
+        /*if (currentUser == null || !currentUser.getUid().equals(userId)) {
+            return Tasks.forException(new Exception("User not authenticated or user ID mismatch."));
+        }*/
+
+
+        long finalStartTime = (startTime != null) ? startTime : 0L;
+        long finalEndTime = (endTime != null) ? endTime : System.currentTimeMillis();
+
+
+        return repository.getUncompletedOccurrencesInDateRange(userId, finalStartTime, finalEndTime)
+                .continueWith(task -> {
+
+                    if (!task.isSuccessful()) {
+
+                        throw task.getException() != null ? task.getException() : new Exception("Failed to fetch uncompleted task occurrences.");
+                    }
+
+                    List<TaskOccurrence> uncompletedOccurrences = task.getResult();
+
+
+                    if (uncompletedOccurrences != null) {
+                        return uncompletedOccurrences.size();
+                    } else {
+                        return 0;
+                    }
+                });
+    }
+
 }

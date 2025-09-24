@@ -23,13 +23,13 @@ public class SpecialMissionRemoteDataSource {
 
 
     public Task<Void> saveOrUpdateMission(SpecialMission mission) {
-        // Koristimo mission.getMissionId() da ciljamo specifičan dokument.
+
         return getMissionsCollection().document(mission.getMissionId()).set(mission);
     }
 
 
     public Task<QuerySnapshot> getActiveMissionForAlliance(String allianceId) {
-        // Pravimo upit koji traži misije za datu alijansu I koje su u toku.
+
         return getMissionsCollection()
                 .whereEqualTo("allianceId", allianceId)
                 .whereEqualTo("missionStatus", MissionStatus.STARTED.name())

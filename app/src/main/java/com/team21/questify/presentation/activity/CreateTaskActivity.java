@@ -49,7 +49,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
     private Spinner spinnerPriority;
     private RadioGroup radioGroupTaskType;
 
-    // Novi članovi za ponavljajuće zadatke
+
     private LinearLayout recurringFieldsLayout;
     private LinearLayout oneTimeFieldsLayout;
     private EditText etRecurringInterval;
@@ -92,16 +92,16 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         setupEnums();
         setupListeners();
 
-        // Proveravamo da li fragment već postoji pre nego što ga dodamo
+
         Fragment existingFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container_category);
         if (existingFragment == null) {
             TaskCategoryFragment categoryFragment = TaskCategoryFragment.newInstance();
-            categoryFragment.setCategorySelectedListener(this); // Postavljanje listenera
+            categoryFragment.setCategorySelectedListener(this);
             FragmentTransaction categoryTransaction = getSupportFragmentManager().beginTransaction();
             categoryTransaction.add(R.id.fragment_container_category, categoryFragment);
             categoryTransaction.commit();
         } else {
-            // Ako fragment postoji, osiguravamo da je listener postavljen.
+
             ((TaskCategoryFragment) existingFragment).setCategorySelectedListener(this);
         }
         oneTimeFieldsLayout.setVisibility(View.VISIBLE);
@@ -126,7 +126,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
     }
 
     private void setupEnums() {
-        // Popunjavanje Spinnera za težinu
+
         List<String> difficultyList = new ArrayList<>();
         for (TaskDifficulty difficulty : TaskDifficulty.values()) {
             difficultyList.add(difficulty.name());
@@ -135,7 +135,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerDifficulty.setAdapter(difficultyAdapter);
 
-        // Popunjavanje Spinnera za prioritet
+
         List<String> priorityList = new ArrayList<>();
         for (TaskPriority priority : TaskPriority.values()) {
             priorityList.add(priority.name());
@@ -144,7 +144,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerPriority.setAdapter(priorityAdapter);
 
-        // Popunjavanje Spinnera za jedinicu ponavljanja
+
         List<String> recurrenceUnitList = new ArrayList<>();
         for (RecurrenceUnit unit : RecurrenceUnit.values()) {
             recurrenceUnitList.add(unit.name());
@@ -153,17 +153,17 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         recurrenceUnitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerRecurrenceUnit.setAdapter(recurrenceUnitAdapter);
 
-        // Dinamičko kreiranje RadioButton-a za tip zadatka
+
         for (TaskType type : TaskType.values()) {
             RadioButton radioButton = new RadioButton(this);
-            // Lepše formatiranje teksta
+
             String formattedText = type.name().replace("_", " ");
             radioButton.setText(formattedText.substring(0, 1).toUpperCase() + formattedText.substring(1).toLowerCase());
-            radioButton.setId(type.ordinal()); // Koristimo ordinal kao ID
+            radioButton.setId(type.ordinal());
             radioGroupTaskType.addView(radioButton);
         }
 
-        // Postavljamo podrazumevani izbor na prvi RadioButton
+
         if (radioGroupTaskType.getChildCount() > 0) {
             ((RadioButton) radioGroupTaskType.getChildAt(0)).setChecked(true);
         }
@@ -171,11 +171,11 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
 
     private void setupListeners() {
         radioGroupTaskType.setOnCheckedChangeListener((group, checkedId) -> {
-            // Pronalaženje izabranog RadioButton-a
+
             RadioButton checkedRadioButton = findViewById(checkedId);
 
             if (checkedRadioButton != null) {
-                // Dobijanje tipa zadatka na osnovu ID-a
+
                 TaskType selectedType = TaskType.values()[checkedId];
 
 
@@ -189,7 +189,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
             }
         });
 
-        // Inicijalno sakrivanje polja za ponavljanje ako prvi izbor nije RECURRING
+
         RadioButton initialCheckedButton = findViewById(radioGroupTaskType.getCheckedRadioButtonId());
         if (initialCheckedButton != null) {
             TaskType initialType = TaskType.values()[initialCheckedButton.getId()];
@@ -231,16 +231,16 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
         long executionTimeMillis = TimeUnit.HOURS.toMillis(hour) + TimeUnit.MINUTES.toMillis(minute);
 
 
-        // Pretpostavimo da je categoryId dobijen iz listenera
+
         if (selectedCategoryId == null) {
-            // Ne dozvoljavamo kreiranje bez kategorije
+
             Toast.makeText(this, "Please select a category", Toast.LENGTH_SHORT).show();
             return;
         }
 
         userService.fetchUserProfile(sharedPreferences.getUserUid())
                 .addOnSuccessListener(user -> {
-                    // Kreiramo Task objekat
+
                     Task newTask = new Task();
                     newTask.setName(name);
                     newTask.setDescription(description);
@@ -301,7 +301,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
                         newTask.setRecurringEndDate(endCal.getTimeInMillis());
                     }
                     else {
-                        // Ako nije RECURRING, ostavi sve vezano za ponavljanje na null ili podrazumevane vrednosti
+
                         newTask.setRecurringInterval(0);
                         newTask.setRecurrenceUnit(null);
                         newTask.setRecurringEndDate(null);
@@ -319,7 +319,7 @@ public class CreateTaskActivity extends AppCompatActivity implements TaskCategor
                     });
                 })
                 .addOnFailureListener(e -> {
-                    // Greška pri dohvatanju korisnika
+
                     Log.e("CreateTaskActivity", "Failed to get user for task creation.", e);
                     Toast.makeText(this, "Error: Could not get user data.", Toast.LENGTH_LONG).show();
                 });

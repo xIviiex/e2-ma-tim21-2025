@@ -50,10 +50,10 @@ public class SpecialMissionRepository {
                         SpecialMission remoteMission = queryDocumentSnapshots.getDocuments().get(0).toObject(SpecialMission.class);
                         missionLiveData.postValue(remoteMission);
 
-                        // Ažuriraj lokalni keš sa svežim podacima
+
                         executor.execute(() -> localDataSource.saveOrUpdateSpecialMission(remoteMission));
                     } else {
-                        // Nema aktivne misije na serveru
+
                         missionLiveData.postValue(null);
                     }
                 });
@@ -76,10 +76,10 @@ public class SpecialMissionRepository {
         newMission.setStartTime(currentTime);
         newMission.setEndTime(currentTime + twoWeeksInMillis);
 
-        // Za svakog člana, kreiraj prazan (default) objekat za praćenje napretka
+
         for (User member : members) {
             SpecialMissionUser userProgress = new SpecialMissionUser();
-            userProgress.setUserId(member.getUserId()); // Poveži sa ID-jem korisnika
+            userProgress.setUserId(member.getUserId());
 
             userProgress.setStorePurchases(5);
             userProgress.setSuccessfulRegularBossHits(10);
@@ -93,7 +93,7 @@ public class SpecialMissionRepository {
         Task<Void> remoteTask = remoteDataSource.saveOrUpdateMission(newMission);
 
         remoteTask.addOnSuccessListener(aVoid -> {
-            // Lokalno čuvanje se dešava sa strane, ne utiče na glavni Task
+
             executor.execute(() -> localDataSource.saveOrUpdateSpecialMission(newMission));
         });
 
