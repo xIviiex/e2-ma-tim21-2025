@@ -318,6 +318,66 @@ public class TaskOccurrenceLocalDataSource {
     }
 
 
+    //==========================================================
+    //BORBA SA BOSS-OM
+    //======================================================
+    public List<TaskOccurrence> getCompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor c = null;
+
+        try {
+            String selection = "user_id = ? AND status = ? AND date >= ? AND date < ?";
+            String[] selectionArgs = {
+                    userId,
+                    TaskStatus.COMPLETED.name(),
+                    String.valueOf(fromDate),
+                    String.valueOf(toDate)
+            };
+
+            c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null, selection, selectionArgs, null, null, "date ASC");
+
+            if (c != null) {
+                while (c.moveToNext()) {
+                    occurrences.add(cursorToTaskOccurrence(c));
+                }
+            }
+        } finally {
+            if (c != null) c.close();
+            if (db != null) db.close();
+        }
+        return occurrences;
+    }
+
+    public List<TaskOccurrence> getUncompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
+        List<TaskOccurrence> occurrences = new ArrayList<>();
+        SQLiteDatabase db = helper.getReadableDatabase();
+        Cursor c = null;
+
+        try {
+            String selection = "user_id = ? AND status = ? AND date >= ? AND date < ?";
+            String[] selectionArgs = {
+                    userId,
+                    TaskStatus.UNCOMPLETED.name(),
+                    String.valueOf(fromDate),
+                    String.valueOf(toDate)
+            };
+
+            c = db.query(DatabaseHelper.T_TASK_OCCURRENCES, null, selection, selectionArgs, null, null, "date ASC");
+
+            if (c != null) {
+                while (c.moveToNext()) {
+                    occurrences.add(cursorToTaskOccurrence(c));
+                }
+            }
+        } finally {
+            if (c != null) c.close();
+            if (db != null) db.close();
+        }
+        return occurrences;
+    }
+
+
 
     // =================================================================
     // NEW METHODS FOR XP QUOTA CHECKING

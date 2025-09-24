@@ -8,73 +8,73 @@
     android:padding="16dp"
     tools:context=".presentation.activity.MainActivity">
 
+    <!-- DODANA IKONA ZA BOSS FIGHT -->
+    <ImageView
+        android:id="@+id/iv_boss_fight_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:src="@drawable/ic_boss_fight"
+        app:layout_constraintEnd_toStartOf="@+id/iv_calendar_icon"
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="Boss Fight Icon" />
+
     <ImageView
         android:id="@+id/iv_calendar_icon"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_marginEnd="4dp"
         android:layout_marginTop="4dp"
-        android:src="@drawable/ic_calendar"
+        android:layout_marginEnd="4dp"
         android:clickable="true"
         android:focusable="true"
+        android:src="@drawable/ic_calendar"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:contentDescription="Calendar Icon" />
 
     <TextView
         android:id="@+id/tv_welcome_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
         android:text="Welcome to Questify!"
         android:textSize="24sp"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- Korištenje LinearLayouta za lakše raspoređivanje gumba -->
+    <LinearLayout
         android:id="@+id/button_container"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_welcome_title"
+        android:layout_marginTop="32dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/tv_welcome_title">
 
         <Button
             android:id="@+id/btn_view_my_profile"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="View My Profile"
-            android:textSize="14sp"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/btn_create_task"
-            android:layout_marginEnd="8dp" />
-
-
+            android:layout_marginEnd="8dp"
+            android:text="My Profile"
+            android:textSize="14sp" />
 
         <Button
             android:id="@+id/btn_create_task"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Create New Task"
-            android:textSize="14sp"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/btn_view_my_profile"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="8dp"
+            android:text="New Task"
+            android:textSize="14sp" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -145,6 +145,8 @@ public class UserLocalDataSource {
         cv.put("friends_ids", TextUtils.join(",", u.getFriendsIds()));
         cv.put("current_alliance_id", u.getCurrentAllianceId());
         cv.put("fcm_token", u.getFcmToken());
+        cv.put("previous_level_up_timestamp", u.getPreviousLevelUpTimestamp());
+        cv.put("current_level_up_timestamp", u.getCurrentLevelUpTimestamp());
         return cv;
     }
 
@@ -173,6 +175,15 @@ public class UserLocalDataSource {
         int fcmTokenIndex = c.getColumnIndex("fcm_token");
         if (fcmTokenIndex != -1) {
             u.setFcmToken(c.getString(fcmTokenIndex));
+        }
+        int prevLevelUpIndex = c.getColumnIndex("previous_level_up_timestamp");
+        if (prevLevelUpIndex != -1 && !c.isNull(prevLevelUpIndex)) {
+            u.setPreviousLevelUpTimestamp(c.getLong(prevLevelUpIndex));
+        }
+
+        int currLevelUpIndex = c.getColumnIndex("current_level_up_timestamp");
+        if (currLevelUpIndex != -1 && !c.isNull(currLevelUpIndex)) {
+            u.setCurrentLevelUpTimestamp(c.getLong(currLevelUpIndex));
         }
         return u;
     }

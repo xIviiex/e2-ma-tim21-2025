@@ -153,6 +153,29 @@ public class TaskOccurrenceRemoteDataSource {
 
 
     // =================================================================
+    // BOSS FIGHT
+    // =================================================================
+
+    public Task<QuerySnapshot> getCompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
+        return db.collection(OCCURRENCES_COLLECTION)
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("status", TaskStatus.COMPLETED.name())
+                .whereGreaterThanOrEqualTo("date", fromDate)
+                .whereLessThan("date", toDate) // Koristimo 'lessThan' za preciznost
+                .get();
+    }
+
+    public Task<QuerySnapshot> getUncompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
+        return db.collection(OCCURRENCES_COLLECTION)
+                .whereEqualTo("userId", userId)
+                .whereEqualTo("status", TaskStatus.UNCOMPLETED.name()) // Ključna razlika
+                .whereGreaterThanOrEqualTo("date", fromDate)
+                .whereLessThan("date", toDate)
+                .get();
+    }
+
+
+    // =================================================================
     // NEW METHODS FOR XP QUOTA CHECKING
     // =================================================================
 

@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String DB_NAME = "questify.db";
-    public static final int DB_VERSION = 8;
+    public static final int DB_VERSION = 10;
     public static final String T_USERS = "users";
     public static final String T_TASK_CATEGORIES = "task_categories";
     public static final String T_TASKS = "tasks";
@@ -15,6 +15,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String T_INVITATIONS = "invitations";
     public static final String T_MESSAGES = "messages";
     public static final String T_INVENTORY = "inventory";
+    public static final String T_BOSSES = "bosses";
 
     public DatabaseHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -38,7 +39,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "consecutive_active_days INTEGER DEFAULT 0," +
                 "friends_ids TEXT," +
                 "current_alliance_id TEXT," +
-                "fcm_token TEXT" +
+                "fcm_token TEXT," +
+                "previous_level_up_timestamp INTEGER," +
+                "current_level_up_timestamp INTEGER" +
                 ")");
 
         db.execSQL("CREATE TABLE " + T_TASK_CATEGORIES + " (" +
@@ -121,6 +124,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "is_active INTEGER NOT NULL DEFAULT 0," +
                 "uses_left INTEGER NOT NULL," +
                 "current_bonus REAL NOT NULL," +
+                "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                ")");
+
+        db.execSQL("CREATE TABLE " + T_BOSSES + " (" +
+                "id TEXT PRIMARY KEY, " +
+                "user_id TEXT NOT NULL, " +
+                "max_hp REAL NOT NULL, " +
+                "current_hp REAL NOT NULL, " +
+                "is_defeated INTEGER NOT NULL, " +
+                "level INTEGER NOT NULL, " +
                 "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                 ")");
 
@@ -228,6 +241,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     "current_bonus REAL NOT NULL," +
                     "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
                     ")");
+        }
+        if (oldVersion < 9) {
+            db.execSQL("CREATE TABLE " + T_BOSSES + " (" +
+                    "id TEXT PRIMARY KEY, " +
+                    "user_id TEXT NOT NULL, " +
+                    "max_hp REAL NOT NULL, " +
+                    "current_hp REAL NOT NULL, " +
+                    "is_defeated INTEGER NOT NULL, " +
+                    "level INTEGER NOT NULL, " +
+                    "FOREIGN KEY(user_id) REFERENCES " + T_USERS + "(id) ON DELETE CASCADE" +
+                    ")");
+        }
+        if (oldVersion < 10) {
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN previous_level_up_timestamp INTEGER");
+            db.execSQL("ALTER TABLE " + T_USERS + " ADD COLUMN current_level_up_timestamp INTEGER");
         }
     }
 

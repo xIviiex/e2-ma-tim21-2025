@@ -3,7 +3,9 @@ package com.team21.questify.presentation.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -13,6 +15,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.team21.questify.R;
+import com.team21.questify.application.model.Boss;
+import com.team21.questify.application.service.BossService;
 import com.team21.questify.application.service.TaskOccurrenceService;
 import com.team21.questify.application.service.UserService;
 import com.team21.questify.utils.SharedPrefs;
@@ -24,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
     private UserService userService;
     private SharedPrefs sharedPreferences;
     private TaskOccurrenceService taskOccurrenceService;
+    private BossService bossService;
+    private ImageView bossFightIcon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
         taskOccurrenceService = new TaskOccurrenceService(this);
+        bossService = new BossService(this);
         String userId = sharedPreferences.getUserUid();
         if (userId == null) {
             startActivity(new Intent(this, LoginActivity.class));
@@ -48,7 +55,43 @@ public class MainActivity extends AppCompatActivity {
         updateActiveDaysStreak(userId);
         taskOccurrenceService.updateOldOccurrences();
         initViews();
+        checkBossFightAvailability(userId);
     }
+
+
+    private void checkBossFightAvailability(String userId) {
+        bossFightIcon = findViewById(R.id.iv_boss_fight_icon);
+        bossFightIcon.setVisibility(View.GONE); // Uvijek sakrij na početku
+
+        bossService.getBossForNextFight(bossTask -> {
+            if (bossTask.isSuccessful()) {
+                Boss nextBoss = bossTask.getResult();
+
+                if (nextBoss != null) {
+                    // SLUČAJ 1: Uspješno dohvaćen ili kreiran novi boss.
+                    // Sada dohvati profil korisnika da usporedimo nivoe.
+                    userService.fetchUserProfile(userId).addOnSuccessListener(currentUser -> {
+                        if (currentUser != null && currentUser.getLevel() >= nextBoss.getLevel()) {
+                            Log.d("MainActivity", "User level OK. Showing Boss Fight icon.");
+                            bossFightIcon.setVisibility(View.VISIBLE);
+                        } else {
+                            Log.d("MainActivity", "User level too low. Hiding Boss Fight icon.");
+                        }
+                    }).addOnFailureListener(e -> Log.e("MainActivity", "Failed to fetch user profile for level check.", e));
+                } else {
+                    // SLUČAJ 2: Nema novog bosa za borbu. Ovo je validan scenarij, ne greška.
+                    // Korisnik je vjerojatno pobijedio bosa za svoj nivo i čeka na level-up.
+                    Log.d("MainActivity", "No new boss available for the current user level.");
+                }
+            } else {
+                // SLUČAJ 3: Dogodila se stvarna greška.
+                Log.e("MainActivity", "Failed to get next boss.", bossTask.getException());
+            }
+        });
+    }
+
+
+
     private void updateActiveDaysStreak(String userId) {
         userService.fetchUserProfile(userId).addOnSuccessListener(user -> {
             long today = System.currentTimeMillis();
@@ -106,6 +149,13 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.iv_calendar_icon).setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ViewTasksActivity.class);
+            startActivity(intent);
+        });
+
+        findViewById(R.id.iv_boss_fight_icon).setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, InventoryActivity.class);
+            // Postavljanje moda za pripremu za boss fight
+            intent.putExtra("IS_BOSS_PREPARATION", true);
             startActivity(intent);
         });
     }
