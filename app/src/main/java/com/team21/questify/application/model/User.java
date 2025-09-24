@@ -27,6 +27,10 @@ public class User {
     private String currentAllianceId;
     private String fcmToken;
 
+    //IVA DODALA
+    private Long previousLevelUpTimestamp;
+    private Long currentLevelUpTimestamp;
+
     public User() {}
 
     public User(String userId, String username, String email, String avatarName, Long createdAt) {
@@ -70,4 +74,20 @@ public class User {
     public void setCurrentAllianceId(String currentAllianceId) { this.currentAllianceId = currentAllianceId; }
     public String getFcmToken() { return fcmToken; }
     public void setFcmToken(String fcmToken) { this.fcmToken = fcmToken; }
+
+    public Long getPreviousLevelUpTimestamp() {
+        return previousLevelUpTimestamp;
+    }
+
+    public void setPreviousLevelUpTimestamp(Long previousLevelUpTimestamp) {
+        this.previousLevelUpTimestamp = previousLevelUpTimestamp;
+    }
+
+    public Long getCurrentLevelUpTimestamp() {
+        return currentLevelUpTimestamp;
+    }
+
+    public void setCurrentLevelUpTimestamp(Long currentLevelUpTimestamp) {
+        this.currentLevelUpTimestamp = currentLevelUpTimestamp;
+    }
 }

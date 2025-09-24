@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -160,5 +161,41 @@ public class TaskOccurrenceService {
         repository.getThisMonthsCompletedTaskCount(user.getUid(), priority, listener);
     }
 
+
+
+    //============================================================
+    // BOSS FIGHT
+    //===========================================================
+    public Task<Integer> getSuccessRateForStage(Long startTime, Long endTime) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            return Tasks.forException(new Exception("User not authenticated"));
+        }
+        String userId = user.getUid();
+
+
+        final long finalStartTime = (startTime != null) ? startTime : 0L;
+        final long finalEndTime = (endTime != null) ? endTime : System.currentTimeMillis();
+
+
+        Task<List<TaskOccurrence>> completedTask = repository.getCompletedOccurrencesInDateRange(userId, finalStartTime, finalEndTime);
+        Task<List<TaskOccurrence>> uncompletedTask = repository.getUncompletedOccurrencesInDateRange(userId, finalStartTime, finalEndTime);
+
+
+        return Tasks.whenAllSuccess(completedTask, uncompletedTask).continueWith(task -> {
+            List<TaskOccurrence> completed = (List<TaskOccurrence>) task.getResult().get(0);
+            List<TaskOccurrence> uncompleted = (List<TaskOccurrence>) task.getResult().get(1);
+
+            int completedCount = completed.size();
+            int uncompletedCount = uncompleted.size();
+            int total = completedCount + uncompletedCount;
+
+            if (total == 0) {
+                return 100; // Nema zadataka u etapi, uspješnost je 100%
+            }
+
+            return (int) (( (double) completedCount / total) * 100.0);
+        });
+    }
 
 }

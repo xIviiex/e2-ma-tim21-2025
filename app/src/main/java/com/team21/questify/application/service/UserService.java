@@ -125,6 +125,12 @@ public class UserService {
 
             if (newXp >= requiredXp) {
                 int newLevel = user.getLevel() + 1;
+
+                //-------------------IVA-----------------------
+                user.setPreviousLevelUpTimestamp(user.getCurrentLevelUpTimestamp());
+                user.setCurrentLevelUpTimestamp(System.currentTimeMillis());
+                //---------------------------------------------
+
                 user.setLevel(newLevel);
                 user.setXp(newXp - requiredXp);
                 user.setTitle(LevelCalculator.getTitleForLevel(newLevel));
@@ -193,7 +199,7 @@ public class UserService {
         });
     }
 
-    // ovo pozovi nakon borbe, smanji vrednosti mnozilaca u battle stats ako borba nije 100% uspesna pa ih onda prosledi
+
     public Task<Void> addPPAndCoinsAfterBossBattle(String userId, BattleStats stats, boolean battleWon) {
         return userRepository.getUserById(userId).continueWithTask(userTask -> {
             if (!userTask.isSuccessful() || userTask.getResult() == null) {

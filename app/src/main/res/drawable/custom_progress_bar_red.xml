@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Definiše pozadinu progresne trake -->
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="12dp" />
+            <solid android:color="#4DFFFFFF" /> <!-- Polu-providna bela pozadina -->
+        </shape>
+    </item>
+
+    <!-- Definiše izgled same progresije (HP) -->
+    <item android:id="@android:id/progress">
+        <scale android:scaleWidth="100%">
+            <shape>
+                <corners android:radius="12dp" />
+                <solid android:color="#E74C3C" /> <!-- Crvena boja za HP -->
+            </shape>
+        </scale>
+    </item>
+
+</layer-list>

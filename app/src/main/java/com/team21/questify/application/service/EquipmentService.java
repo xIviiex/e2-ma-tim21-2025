@@ -171,8 +171,7 @@ public class EquipmentService {
         }
     }
 
-    // logic for boss battle:
-    // metoda kada korisnik iskoristi akriviranu opremu u borbi sa bosom - NAKON BORBE
+
     public Task<Void> processEquipmentAfterBossBattle(String userId) {
         return equipmentRepository.getInventory(userId).continueWithTask(task -> {
             if (!task.isSuccessful()) throw task.getException();
@@ -199,10 +198,7 @@ public class EquipmentService {
             return Tasks.whenAll(tasksToPerform);
         });
     }
-    // metoda kada korisnik nakon borbe dobija nagradu nakon spec misije ili borbe sa bossom - napravi u zavisnosti
-    // od toga za sta se poziva metoda listu sa mogucim nagradama (List<EquipmentId>) i metodi prosledi random vrednost
-    // iz te liste (na osnovu verovatnoca koje imas ili kako vec) one 4 vrednosti za napitke ako je spec misija ili za
-    // borbu sa bosom ona tri za odecu i oba oruzja
+
     public Task<Void> rewardEquipment(String userId, EquipmentId newItemId) {
         return equipmentRepository.getInventory(userId).continueWithTask(task -> {
             if (!task.isSuccessful()) throw task.getException();
@@ -236,8 +232,7 @@ public class EquipmentService {
         });
     }
 
-    // racuna bonuse koje nudi oprema i pozovi je PRE borbe, a onda menjaj u zavisnosti od toka borbe polja od
-    // BattleStatsa (smanjuj, povecavaj)
+
     public Task<BattleStats> calculateBattleStats(String userId) {
         return getActiveInventory(userId).continueWith(task -> {
             if (!task.isSuccessful()) {

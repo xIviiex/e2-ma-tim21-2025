@@ -1,8 +1,11 @@
 package com.team21.questify.presentation.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,6 +44,13 @@ public class InventoryActivity extends AppCompatActivity {
     private SharedPrefs sharedPrefs;
     private TextView tvWeaponsTitle, tvArmorTitle, tvPotionsTitle;
 
+    // UI elementi za "Boss" mod
+    private FrameLayout bossFightButtonContainer;
+    private Button btnStartBossFight;
+
+
+    private boolean isBossPreparationMode = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,7 +62,27 @@ public class InventoryActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("IS_BOSS_PREPARATION")) {
+            isBossPreparationMode = intent.getBooleanExtra("IS_BOSS_PREPARATION", false);
+        }
+
         initServicesAndViews();
+        setupUiForMode();
+    }
+
+    private void setupUiForMode() {
+        if (getSupportActionBar() == null) return;
+
+        if (isBossPreparationMode) {
+            // Ako je "Boss" mod
+            getSupportActionBar().setTitle("Get Ready For a Fight!");
+            bossFightButtonContainer.setVisibility(View.VISIBLE);
+        } else {
+            // Ako je normalan mod
+            getSupportActionBar().setTitle("Inventory & Equipment");
+            bossFightButtonContainer.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -75,6 +105,8 @@ public class InventoryActivity extends AppCompatActivity {
         rvArmor = findViewById(R.id.rv_inventory_armor);
         tvPotionsTitle = findViewById(R.id.tv_inventory_potions_title);
         rvPotions = findViewById(R.id.rv_inventory_potions);
+        bossFightButtonContainer = findViewById(R.id.boss_fight_button_container);
+        btnStartBossFight = findViewById(R.id.btn_start_boss_fight);
 
         InventoryAdapter.OnItemActionClickListener listener = new InventoryAdapter.OnItemActionClickListener() {
             @Override
@@ -98,6 +130,14 @@ public class InventoryActivity extends AppCompatActivity {
         rvArmor.setAdapter(armorAdapter);
         rvPotions.setLayoutManager(new LinearLayoutManager(this));
         rvPotions.setAdapter(potionsAdapter);
+
+
+
+        btnStartBossFight.setOnClickListener(v -> {
+            Intent bossFightIntent = new Intent(InventoryActivity.this, BossFightActivity.class);
+            startActivity(bossFightIntent);
+            finish();
+        });
     }
 
     private void loadInventory() {

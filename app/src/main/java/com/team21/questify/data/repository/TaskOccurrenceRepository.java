@@ -288,6 +288,48 @@ public class TaskOccurrenceRepository {
     }
 
 
+    //======================================================
+    // BOSS FIGHT
+    //======================================================
+
+    public Task<List<TaskOccurrence>> getCompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
+
+        return remoteDataSource.getCompletedOccurrencesInDateRange(userId, fromDate, toDate)
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+
+                        List<TaskOccurrence> remoteOccurrences = task.getResult().toObjects(TaskOccurrence.class);
+                        return Tasks.forResult(remoteOccurrences);
+                    } else {
+
+                        Log.w("TaskOccurrenceRepo", "Remote fetch failed for completed in range. Falling back to local.", task.getException());
+                        return Tasks.call(executor, () ->
+                                localDataSource.getCompletedOccurrencesInDateRange(userId, fromDate, toDate)
+                        );
+                    }
+                });
+    }
+
+
+    public Task<List<TaskOccurrence>> getUncompletedOccurrencesInDateRange(String userId, long fromDate, long toDate) {
+        // 1. Prvo pokušaj dohvatiti s Firebasea
+        return remoteDataSource.getUncompletedOccurrencesInDateRange(userId, fromDate, toDate)
+                .continueWithTask(task -> {
+                    if (task.isSuccessful()) {
+
+                        List<TaskOccurrence> remoteOccurrences = task.getResult().toObjects(TaskOccurrence.class);
+                        return Tasks.forResult(remoteOccurrences);
+                    } else {
+
+                        Log.w("TaskOccurrenceRepo", "Remote fetch failed for uncompleted in range. Falling back to local.", task.getException());
+                        return Tasks.call(executor, () ->
+                                localDataSource.getUncompletedOccurrencesInDateRange(userId, fromDate, toDate)
+                        );
+                    }
+                });
+    }
+
+
 
     // =================================================================
     // NEW METHODS FOR XP QUOTA CHECKING
