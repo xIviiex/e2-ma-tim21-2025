@@ -26,7 +26,9 @@ import com.team21.questify.R;
 import com.team21.questify.application.model.Equipment;
 import com.team21.questify.application.model.enums.EquipmentType;
 import com.team21.questify.application.service.EquipmentService;
+import com.team21.questify.application.service.SpecialMissionService;
 import com.team21.questify.application.service.UserService;
+import com.team21.questify.presentation.adapter.BadgeAdapter;
 import com.team21.questify.presentation.adapter.EquipmentAdapter;
 import com.team21.questify.utils.SharedPrefs;
 import com.team21.questify.utils.LevelCalculator;
@@ -38,7 +40,7 @@ import java.util.stream.Collectors;
 public class ProfileActivity extends AppCompatActivity {
 
     private ImageView ivAvatar, ivQrCode, ivAvatarBorder;
-    private TextView tvUsername, tvLevel, tvTitle, tvPowerPoints, tvXpDetails, tvCoins;
+    private TextView tvUsername, tvLevel, tvTitle, tvPowerPoints, tvXpDetails, tvCoins, tvBadgesTitle;
     private Button btnChangePassword, btnAddFriend;
     private ProgressBar pbXpProgress;
     private boolean isMyProfile;
@@ -52,6 +54,10 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView tvWeaponsTitle, tvArmorTitle, tvPotionsTitle, tvNoEquipment;
     private ImageView ivShopIcon;
     private Button btnManageEquipment;
+    private SpecialMissionService specialMissionService;
+    private RecyclerView rvBadges;
+    private BadgeAdapter badgeAdapter;
+    private TextView tvNoBadges;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +70,7 @@ public class ProfileActivity extends AppCompatActivity {
         userService = new UserService(this);
         sharedPreferences = new SharedPrefs(this);
         equipmentService = new EquipmentService(this);
+        specialMissionService = new SpecialMissionService(this);
 
         currentUserId = sharedPreferences.getUserUid();
         profileUserId = getIntent().getStringExtra("user_id");
@@ -82,6 +89,9 @@ public class ProfileActivity extends AppCompatActivity {
         loadUserProfile(profileUserId);
         if (equipmentService != null) {
             loadUserInventory(profileUserId);
+        }
+        if (specialMissionService != null) {
+            loadUserBadges(profileUserId);
         }
     }
 
@@ -106,6 +116,9 @@ public class ProfileActivity extends AppCompatActivity {
         tvPotionsTitle = findViewById(R.id.tv_potions_title);
         rvPotions = findViewById(R.id.rv_potions);
         ivShopIcon = findViewById(R.id.iv_shop_icon);btnManageEquipment = findViewById(R.id.btn_manage_equipment);
+        rvBadges = findViewById(R.id.rv_badges);
+        tvNoBadges = findViewById(R.id.tv_no_badges);
+        tvBadgesTitle = findViewById(R.id.tv_badges_title);
 
         weaponsAdapter = new EquipmentAdapter();
         rvWeapons.setLayoutManager(new LinearLayoutManager(this));
@@ -118,6 +131,10 @@ public class ProfileActivity extends AppCompatActivity {
         potionsAdapter = new EquipmentAdapter();
         rvPotions.setLayoutManager(new LinearLayoutManager(this));
         rvPotions.setAdapter(potionsAdapter);
+
+        badgeAdapter = new BadgeAdapter();
+        rvBadges.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvBadges.setAdapter(badgeAdapter);
 
         ivShopIcon.setOnClickListener(v -> {
             Intent intent = new Intent(ProfileActivity.this, ShopActivity.class);
@@ -219,6 +236,29 @@ public class ProfileActivity extends AppCompatActivity {
         equipmentService.getInventory(userId).addOnSuccessListener(this::displayInventory)
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to load inventory.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void loadUserBadges(String userId) {
+        specialMissionService.getAllEarnedBadges(userId)
+                .addOnSuccessListener(badges -> {
+                    if (badges == null || badges.isEmpty()) {
+                        rvBadges.setVisibility(View.GONE);
+                        tvNoBadges.setVisibility(View.VISIBLE);
+                        tvBadgesTitle.setText(getString(R.string.badges_section_title));
+                    } else {
+                        rvBadges.setVisibility(View.VISIBLE);
+                        tvNoBadges.setVisibility(View.GONE);
+                        String titleWithCount = getString(R.string.badges_section_title) + " (" + badges.size() + ")";
+                        tvBadgesTitle.setText(titleWithCount);
+                        badgeAdapter.setBadges(badges);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    rvBadges.setVisibility(View.GONE);
+                    tvNoBadges.setVisibility(View.VISIBLE);
+                    tvBadgesTitle.setText(getString(R.string.badges_section_title));
+                    Toast.makeText(this, "Failed to load badges.", Toast.LENGTH_SHORT).show();
                 });
     }
 

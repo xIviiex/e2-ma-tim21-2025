@@ -1,7 +1,5 @@
 package com.team21.questify.application.service;
 import android.content.Context;
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 
@@ -17,13 +15,17 @@ import com.team21.questify.application.model.User;
 import com.team21.questify.application.model.enums.Badge;
 import com.team21.questify.application.model.enums.FinalizationOutcome;
 import com.team21.questify.application.model.enums.MissionActionType;
+import com.team21.questify.application.model.enums.Badge;
 import com.team21.questify.application.model.enums.MissionStatus;
 import com.team21.questify.data.repository.SpecialMissionRepository;
 import com.team21.questify.data.repository.UserRepository; // Potrebno za dohvatanje članova
 
 import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SpecialMissionService {
 
@@ -139,6 +141,43 @@ public class SpecialMissionService {
             }
         });
         return taskCompletionSource.getTask();
+    }
+
+    public Task<List<Badge>> getAllEarnedBadges(String userId) {
+        return userRepository.getUserById(userId).continueWithTask(userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                return Tasks.forResult(new ArrayList<>());
+            }
+
+            User user = userTask.getResult();
+            String allianceId = user.getCurrentAllianceId();
+
+            if (allianceId == null || allianceId.isEmpty()) {
+                return Tasks.forResult(new ArrayList<>());
+            }
+
+            return repository.getMissionsForAlliance(allianceId)
+                    .continueWith(task -> {
+                        if (!task.isSuccessful()) {
+                            throw task.getException();
+                        }
+
+                        List<Badge> allBadges = new ArrayList<>();
+                        List<SpecialMission> missions = task.getResult();
+
+                        for (SpecialMission mission : missions) {
+                            Map<String, SpecialMissionUser> participants = mission.getParticipantsProgress();
+                            if (participants != null && participants.containsKey(userId)) {
+                                SpecialMissionUser userProgress = participants.get(userId);
+                                if (userProgress != null && userProgress.getEarnedBadges() != null) {
+                                    allBadges.addAll(userProgress.getEarnedBadges());
+                                }
+                            }
+                        }
+
+                        return allBadges.stream().distinct().collect(Collectors.toList());
+                    });
+        });
     }
 
 

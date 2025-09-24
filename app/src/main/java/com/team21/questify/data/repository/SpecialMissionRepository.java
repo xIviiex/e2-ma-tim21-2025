@@ -121,4 +121,14 @@ public class SpecialMissionRepository {
         return remoteDataSource.getStartedMissionsForAlliance(allianceId)
                 .continueWith(task -> task.getResult().toObjects(SpecialMission.class));
     }
+
+    public Task<List<SpecialMission>> getMissionsForAlliance(String allianceId) {
+        return remoteDataSource.getMissionsForUser(allianceId)
+                .continueWith(task -> {
+                    if (!task.isSuccessful()) {
+                        throw task.getException();
+                    }
+                    return task.getResult().toObjects(SpecialMission.class);
+                });
+    }
 }
