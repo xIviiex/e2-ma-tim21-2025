@@ -84,6 +84,8 @@ public class UserStatisticsActivity extends AppCompatActivity {
                 final int longestStreak = Tasks.await(statisticsService.getLongestStreakOfCompletedTasks(currentUserId));
                 final Map<String, Integer> categoryCounts = statisticsService.getCompletedTaskCountsByCategory(currentUserId);
                 final Map<String, Double> avgDifficulty = statisticsService.getAverageDailyDifficultyXp(currentUserId);
+                final int startedMissions = Tasks.await(statisticsService.countStartedMissionsForUser(currentUserId));
+                final int completedMissions = Tasks.await(statisticsService.countCompletedMissionsForUser(currentUserId));
 
                 final int activeDays = com.google.android.gms.tasks.Tasks.await(statisticsService.getConsecutiveActiveDays(currentUserId));
 
@@ -94,6 +96,7 @@ public class UserStatisticsActivity extends AppCompatActivity {
                     displayLongestTaskStreak(longestStreak);
                     displayCompletedTasksByCategory(categoryCounts);
                     displayAverageDifficultyXp(avgDifficulty);
+                    displaySpecialMissionsCount(startedMissions, completedMissions);
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(UserStatisticsActivity.this, "Failed to load statistics.", Toast.LENGTH_SHORT).show());
@@ -219,6 +222,13 @@ public class UserStatisticsActivity extends AppCompatActivity {
         FrameLayout container = findViewById(R.id.averageDifficultyChartContainer);
         container.removeAllViews();
         container.addView(lineChart);
+    }
+
+    private void displaySpecialMissionsCount(int started, int completed) {
+        TextView tvMissions = findViewById(R.id.tvSpecialMissionsCount);
+        if (tvMissions != null) {
+            tvMissions.setText(String.format("%d Started / %d Completed", started, completed));
+        }
     }
 
     private int getTaskStatusColor(TaskStatus status) {

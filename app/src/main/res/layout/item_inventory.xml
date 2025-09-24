@@ -19,46 +19,53 @@
         android:layout_weight="1"
         android:orientation="vertical"
         android:layout_marginStart="16dp">
-
-        <TextView
-            android:id="@+id/tv_equipment_name"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textStyle="bold"
-            tools:text="Sword of Power"/>
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
-        <TextView
-            android:id="@+id/tv_equipment_bonus"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/tv_equipment_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                tools:text="Sword of Power"/>
+
+            <TextView
+                android:id="@+id/tv_equipment_bonus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="+5.02% Permanent Power"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
-            android:visibility="gone"
-            tools:visibility="visible"
-            tools:text="+5.02% Permanent Power"/>
-    </LinearLayout>
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="center_horizontal">
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginStart="8dp">
+            <Button
+                android:id="@+id/btn_upgrade"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Upgrade"
+                android:visibility="gone"
+                tools:visibility="visible"/>
 
-        <Button
-            android:id="@+id/btn_upgrade"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:text="Upgrade"
-            android:visibility="gone"
-            tools:visibility="visible"/>
+            <Button
+                android:id="@+id/btn_action"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                tools:text="Activate"/>
 
-        <Button
-            android:id="@+id/btn_action"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            tools:text="Activate"/>
-
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>
